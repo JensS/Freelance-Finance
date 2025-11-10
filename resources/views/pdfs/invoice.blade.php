@@ -253,8 +253,29 @@
 
         <div class="clearfix"></div>
 
-        @if($invoice->subject)
-            <p><strong>Betreff: {{ $invoice->subject }}</strong></p>
+        @if($invoice->type === 'project')
+            <div style="margin-bottom: 30px; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #333;">
+                @if($invoice->project_name)
+                    <p style="margin: 5px 0;"><strong>Projektname:</strong> {{ $invoice->project_name }}</p>
+                @endif
+
+                @if($invoice->service_location)
+                    <p style="margin: 5px 0;"><strong>Leistungsort:</strong> {{ $invoice->service_location }}</p>
+                @endif
+
+                @if($invoice->service_period_start && $invoice->service_period_end)
+                    <p style="margin: 5px 0;">
+                        <strong>Leistungszeitraum:</strong>
+                        {{ $invoice->service_period_start->format($date_format) }} -
+                        {{ $invoice->service_period_end->format($date_format) }}
+                    </p>
+                @elseif($invoice->service_period_start)
+                    <p style="margin: 5px 0;">
+                        <strong>Leistungsdatum:</strong>
+                        {{ $invoice->service_period_start->format($date_format) }}
+                    </p>
+                @endif
+            </div>
         @endif
 
         <table class="line-items">

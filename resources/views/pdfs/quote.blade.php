@@ -250,8 +250,10 @@
 
         <div class="clearfix"></div>
 
-        @if($quote->subject)
-            <p><strong>Betreff: {{ $quote->subject }}</strong></p>
+        @if($quote->type === 'project' && $quote->project_name)
+            <div style="margin-bottom: 30px; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #333;">
+                <p style="margin: 5px 0;"><strong>Projektname:</strong> {{ $quote->project_name }}</p>
+            </div>
         @endif
 
         <table class="line-items">
