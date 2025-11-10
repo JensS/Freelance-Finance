@@ -1,7 +1,34 @@
-<div>
+<div x-data="{ activeTab: 'company' }">
     <div class="mb-6">
         <h1 class="text-2xl font-semibold text-gray-900">Einstellungen</h1>
         <p class="mt-1 text-sm text-gray-500">Verwalten Sie Ihre Unternehmensinformationen</p>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div class="mb-6 border-b border-gray-200">
+        <nav class="-mb-px flex space-x-8">
+            <button
+                @click="activeTab = 'company'"
+                :class="activeTab === 'company' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'"
+                class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+            >
+                Unternehmen
+            </button>
+            <button
+                @click="activeTab = 'tax'"
+                :class="activeTab === 'tax' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'"
+                class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+            >
+                Steuerinformationen
+            </button>
+            <button
+                @click="activeTab = 'branding'"
+                :class="activeTab === 'branding' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'"
+                class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+            >
+                Branding
+            </button>
+        </nav>
     </div>
 
     <!-- Success Message -->
@@ -20,9 +47,11 @@
         </div>
     @endif
 
-    <form wire:submit="save" class="space-y-6">
-        <!-- Company Information -->
-        <div class="bg-white shadow rounded-lg">
+    <!-- Company Tab Content -->
+    <div x-show="activeTab === 'company'" x-cloak>
+        <form wire:submit="save" class="space-y-6">
+            <!-- Company Information -->
+            <div class="bg-white shadow rounded-lg">
             <div class="px-4 py-5 sm:p-6">
                 <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Unternehmensinformationen</h3>
 
@@ -138,8 +167,51 @@
             </div>
         </div>
 
-        <!-- Tax Information -->
+        <!-- Formatting -->
         <div class="bg-white shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Formatierung</h3>
+                <div class="grid grid-cols-1 gap-6">
+                    <!-- Date Format -->
+                    <div>
+                        <label for="date_format" class="block text-sm font-medium text-gray-700">
+                            Datumsformat
+                        </label>
+                        <input
+                            wire:model="date_format"
+                            type="text"
+                            id="date_format"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            placeholder="z.B. d.m.Y"
+                        >
+                        @error('date_format')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                        <p class="mt-2 text-sm text-gray-500">
+                            PHP-kompatibles Datumsformat. <a href="https://www.php.net/manual/en/datetime.format.php" target="_blank" class="text-indigo-600 hover:underline">Siehe Dokumentation</a>.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="flex justify-end">
+            <button
+                type="submit"
+                class="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            >
+                Einstellungen speichern
+            </button>
+        </div>
+        </form>
+    </div>
+
+    <!-- Tax Tab Content -->
+    <div x-show="activeTab === 'tax'" x-cloak>
+        <form wire:submit="save" class="space-y-6">
+            <!-- Tax Information -->
+            <div class="bg-white shadow rounded-lg">
             <div class="px-4 py-5 sm:p-6">
                 <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Steuerinformationen</h3>
 
@@ -200,105 +272,6 @@
             </div>
         </div>
 
-        <!-- Branding & Design -->
-        <div class="bg-white shadow rounded-lg">
-            <div class="px-4 py-5 sm:p-6">
-                <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Branding & Design</h3>
-
-                <div class="grid grid-cols-1 gap-6">
-                    <!-- Company Logo -->
-                    <div>
-                        <label for="company_logo" class="block text-sm font-medium text-gray-700">
-                            Firmenlogo
-                        </label>
-                        <div class="mt-1 flex items-center">
-                            @if ($company_logo_path)
-                                <div class="mr-4 flex-shrink-0">
-                                    <img src="{{ Storage::url($company_logo_path) }}" alt="Firmenlogo" class="h-12 w-auto">
-                                </div>
-                            @endif
-                            <input
-                                wire:model="company_logo"
-                                type="file"
-                                id="company_logo"
-                                class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-                            >
-                        </div>
-                        @error('company_logo')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                        <div wire:loading wire:target="company_logo" class="mt-2 text-sm text-gray-500">Wird hochgeladen...</div>
-                    </div>
-
-                    <!-- PDF Font Family -->
-                    <div>
-                        <label for="pdf_font_family" class="block text-sm font-medium text-gray-700">
-                            PDF Schriftart Name
-                        </label>
-                        <input
-                            wire:model="pdf_font_family"
-                            type="text"
-                            id="pdf_font_family"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            placeholder="z.B. Fira Sans"
-                        >
-                        @error('pdf_font_family')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                        <p class="mt-2 text-sm text-gray-500">Der Name der Schriftart, wie er im CSS verwendet wird.</p>
-                    </div>
-
-                    <!-- PDF Font File -->
-                    <div>
-                        <label for="pdf_font" class="block text-sm font-medium text-gray-700">
-                            PDF Schriftart-Datei (.ttf, .otf)
-                        </label>
-                        <input
-                            wire:model="pdf_font"
-                            type="file"
-                            id="pdf_font"
-                            class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-                        >
-                        @if($pdf_font_path)
-                            <p class="mt-2 text-sm text-gray-500">Aktuell: {{ $pdf_font_path }}</p>
-                        @endif
-                        @error('pdf_font')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                        <div wire:loading wire:target="pdf_font" class="mt-2 text-sm text-gray-500">Wird hochgeladen...</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Formatting -->
-        <div class="bg-white shadow rounded-lg">
-            <div class="px-4 py-5 sm:p-6">
-                <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Formatierung</h3>
-                <div class="grid grid-cols-1 gap-6">
-                    <!-- Date Format -->
-                    <div>
-                        <label for="date_format" class="block text-sm font-medium text-gray-700">
-                            Datumsformat
-                        </label>
-                        <input
-                            wire:model="date_format"
-                            type="text"
-                            id="date_format"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            placeholder="z.B. d.m.Y"
-                        >
-                        @error('date_format')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                        <p class="mt-2 text-sm text-gray-500">
-                            PHP-kompatibles Datumsformat. <a href="https://www.php.net/manual/en/datetime.format.php" target="_blank" class="text-indigo-600 hover:underline">Siehe Dokumentation</a>.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Submit Button -->
         <div class="flex justify-end">
             <button
@@ -308,5 +281,11 @@
                 Einstellungen speichern
             </button>
         </div>
-    </form>
+        </form>
+    </div>
+
+    <!-- Branding Tab Content -->
+    <div x-show="activeTab === 'branding'" x-cloak>
+        @livewire('settings.branding-settings')
+    </div>
 </div>
