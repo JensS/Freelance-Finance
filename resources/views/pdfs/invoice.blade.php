@@ -5,9 +5,35 @@
     $tax_number = \App\Models\Setting::get('tax_number', '');
     $eu_vat_id = \App\Models\Setting::get('eu_vat_id', '');
     $company_logo_path = \App\Models\Setting::get('company_logo_path');
-    $pdf_font_family = \App\Models\Setting::get('pdf_font_family', 'Fira Sans');
-    $pdf_font_path = \App\Models\Setting::get('pdf_font_path');
     $date_format = \App\Models\Setting::get('date_format', 'd.m.Y');
+
+    // Load font styles
+    $fontStyles = \App\Models\Setting::get('font_styles', [
+        'heading' => [
+            'font_family' => 'Fira Sans',
+            'font_path' => null,
+            'font_size' => '24px',
+            'font_weight' => 'bold',
+            'font_style' => 'normal',
+            'color' => '#333333',
+        ],
+        'small_heading' => [
+            'font_family' => 'Fira Sans',
+            'font_path' => null,
+            'font_size' => '14px',
+            'font_weight' => 'bold',
+            'font_style' => 'normal',
+            'color' => '#333333',
+        ],
+        'body' => [
+            'font_family' => 'Fira Sans',
+            'font_path' => null,
+            'font_size' => '12px',
+            'font_weight' => 'normal',
+            'font_style' => 'normal',
+            'color' => '#333333',
+        ],
+    ]);
 @endphp
 <!DOCTYPE html>
 <html lang="de">
@@ -15,25 +41,42 @@
     <meta charset="UTF-8">
     <title>Rechnung {{ $invoice->invoice_number }}</title>
     <style>
-        @if($pdf_font_path && file_exists(storage_path('app/' . $pdf_font_path)))
+        /* Heading Font */
+        @if($fontStyles['heading']['font_path'] && file_exists(storage_path('app/' . $fontStyles['heading']['font_path'])))
         @font-face {
-            font-family: '{{ $pdf_font_family }}';
-            src: url('{{ storage_path('app/' . $pdf_font_path) }}') format('truetype');
-            font-weight: normal;
-            font-style: normal;
+            font-family: '{{ $fontStyles['heading']['font_family'] }}';
+            src: url('{{ storage_path('app/' . $fontStyles['heading']['font_path']) }}') format('truetype');
+            font-weight: {{ $fontStyles['heading']['font_weight'] }};
+            font-style: {{ $fontStyles['heading']['font_style'] }};
         }
+        @endif
+
+        /* Small Heading Font */
+        @if($fontStyles['small_heading']['font_path'] && file_exists(storage_path('app/' . $fontStyles['small_heading']['font_path'])))
         @font-face {
-            font-family: '{{ $pdf_font_family }}';
-            src: url('{{ storage_path('app/' . $pdf_font_path) }}') format('truetype');
-            font-weight: bold;
-            font-style: normal;
+            font-family: '{{ $fontStyles['small_heading']['font_family'] }}';
+            src: url('{{ storage_path('app/' . $fontStyles['small_heading']['font_path']) }}') format('truetype');
+            font-weight: {{ $fontStyles['small_heading']['font_weight'] }};
+            font-style: {{ $fontStyles['small_heading']['font_style'] }};
+        }
+        @endif
+
+        /* Body Font */
+        @if($fontStyles['body']['font_path'] && file_exists(storage_path('app/' . $fontStyles['body']['font_path'])))
+        @font-face {
+            font-family: '{{ $fontStyles['body']['font_family'] }}';
+            src: url('{{ storage_path('app/' . $fontStyles['body']['font_path']) }}') format('truetype');
+            font-weight: {{ $fontStyles['body']['font_weight'] }};
+            font-style: {{ $fontStyles['body']['font_style'] }};
         }
         @endif
 
         body {
-            font-family: '{{ $pdf_font_family }}', sans-serif;
-            color: #333;
-            font-size: 12px;
+            font-family: '{{ $fontStyles['body']['font_family'] }}', sans-serif;
+            color: {{ $fontStyles['body']['color'] }};
+            font-size: {{ $fontStyles['body']['font_size'] }};
+            font-weight: {{ $fontStyles['body']['font_weight'] }};
+            font-style: {{ $fontStyles['body']['font_style'] }};
             line-height: 1.4;
         }
         .container {
@@ -85,7 +128,6 @@
         }
         .line-items th {
             background-color: #f9f9f9;
-            font-weight: bold;
         }
         .line-items .text-right {
             text-align: right;
@@ -102,8 +144,14 @@
             padding: 8px;
         }
         .totals .total {
-            font-weight: bold;
             border-top: 2px solid #333;
+        }
+        .totals .total td {
+            font-family: '{{ $fontStyles['small_heading']['font_family'] }}', sans-serif;
+            font-size: {{ $fontStyles['small_heading']['font_size'] }};
+            font-weight: {{ $fontStyles['small_heading']['font_weight'] }};
+            font-style: {{ $fontStyles['small_heading']['font_style'] }};
+            color: {{ $fontStyles['small_heading']['color'] }};
         }
         .footer {
             position: fixed;
@@ -129,8 +177,19 @@
             clear: both;
         }
         h1 {
-            font-size: 24px;
+            font-family: '{{ $fontStyles['heading']['font_family'] }}', sans-serif;
+            font-size: {{ $fontStyles['heading']['font_size'] }};
+            font-weight: {{ $fontStyles['heading']['font_weight'] }};
+            font-style: {{ $fontStyles['heading']['font_style'] }};
+            color: {{ $fontStyles['heading']['color'] }};
             margin-bottom: 0;
+        }
+        strong, .small-heading, .line-items th {
+            font-family: '{{ $fontStyles['small_heading']['font_family'] }}', sans-serif;
+            font-size: {{ $fontStyles['small_heading']['font_size'] }};
+            font-weight: {{ $fontStyles['small_heading']['font_weight'] }};
+            font-style: {{ $fontStyles['small_heading']['font_style'] }};
+            color: {{ $fontStyles['small_heading']['color'] }};
         }
         .page-break {
             page-break-after: always;

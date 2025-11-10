@@ -3,17 +3,14 @@
 namespace App\Livewire\Settings;
 
 use App\Models\Setting;
-use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
-use Livewire\WithFileUploads;
 
 #[Layout('components.layouts.app')]
 #[Title('Einstellungen')]
 class Index extends Component
 {
-    use WithFileUploads;
 
     // Company Information
     public string $company_name = '';
@@ -36,21 +33,12 @@ class Index extends Component
 
     public float $vat_rate = 19.0;
 
-    // Branding
-
-    public $company_logo; // For upload
-
-    public ?string $company_logo_path = null; // Stored path
-
-    public $pdf_font; // For upload
-
-    public ?string $pdf_font_family = '';
-
-    public ?string $pdf_font_path = null;
-
     // Formatting
 
     public string $date_format = 'd.m.Y';
+
+    // Current tab
+    public string $currentTab = 'company';
 
     public string $success = '';
 
@@ -92,14 +80,6 @@ class Index extends Component
 
         $this->vat_rate = Setting::get('vat_rate', 19);
 
-        // Load branding information
-
-        $this->company_logo_path = Setting::get('company_logo_path');
-
-        $this->pdf_font_family = Setting::get('pdf_font_family');
-
-        $this->pdf_font_path = Setting::get('pdf_font_path');
-
         // Load formatting
 
         $this->date_format = Setting::get('date_format', 'd.m.Y');
@@ -129,12 +109,6 @@ class Index extends Component
 
             'vat_rate' => 'required|numeric|min:0|max:100',
 
-            'company_logo' => 'nullable|image|max:1024', // 1MB Max
-
-            'pdf_font' => 'nullable|file|mimes:ttf,otf',
-
-            'pdf_font_family' => 'nullable|string|max:255',
-
             'date_format' => 'required|string|max:20',
 
         ]);
@@ -157,57 +131,11 @@ class Index extends Component
 
         Setting::set('vat_rate', $this->vat_rate);
 
-        // Handle logo upload
-
-        if ($this->company_logo) {
-
-            // Delete old logo if it exists
-
-            if ($this->company_logo_path && Storage::disk('public')->exists($this->company_logo_path)) {
-
-                Storage::disk('public')->delete($this->company_logo_path);
-
-            }
-
-            $path = $this->company_logo->store('logo', 'public');
-
-            Setting::set('company_logo_path', $path);
-
-            $this->company_logo_path = $path;
-
-        }
-
-        // Handle font upload
-
-        if ($this->pdf_font) {
-
-            if ($this->pdf_font_path && Storage::exists($this->pdf_font_path)) {
-
-                Storage::delete($this->pdf_font_path);
-
-            }
-
-            $fontPath = $this->pdf_font->storeAs('fonts', $this->pdf_font->getClientOriginalName());
-
-            Setting::set('pdf_font_path', $fontPath);
-
-            $this->pdf_font_path = $fontPath;
-
-        }
-
-        if ($this->pdf_font_family) {
-
-            Setting::set('pdf_font_family', $this->pdf_font_family);
-
-        }
-
         // Save formatting
 
         Setting::set('date_format', $this->date_format);
 
         $this->success = 'Einstellungen erfolgreich gespeichert!';
-
-        $this->reset('company_logo', 'pdf_font');
 
     }
 
