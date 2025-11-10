@@ -40,7 +40,13 @@ Route::middleware(['auth.simple'])->group(function () {
         Route::get('/create', InvoicesCreate::class)->name('create');
         Route::get('/{invoice}/edit', InvoicesEdit::class)->name('edit');
         Route::get('/import', \App\Livewire\Invoices\Import::class)->name('import');
+        Route::get('/{invoice}/preview-html', [\App\Http\Controllers\InvoicePreviewController::class, 'showHtml'])->name('preview-html');
+        Route::get('/{invoice}/preview-pdf', [\App\Http\Controllers\InvoicePreviewController::class, 'showPdf'])->name('preview-pdf');
     });
+
+    // Preview routes for dummy invoice (branding settings)
+    Route::get('/preview/invoice-html', [\App\Http\Controllers\InvoicePreviewController::class, 'previewHtml'])->name('preview.invoice.html');
+    Route::get('/preview/invoice-pdf', [\App\Http\Controllers\InvoicePreviewController::class, 'previewPdf'])->name('preview.invoice.pdf');
 
     // Quotes
     Route::prefix('quotes')->name('quotes.')->group(function () {

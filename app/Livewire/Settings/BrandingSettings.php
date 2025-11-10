@@ -18,11 +18,13 @@ class BrandingSettings extends Component
     // Logo
     public $company_logo;
     public ?string $company_logo_path = null;
+    public ?string $preview_logo_url = null;
 
     // Heading font
     public $heading_font_file;
     public string $heading_font_family = 'Fira Sans';
     public ?string $heading_font_path = null;
+    public ?string $preview_heading_font_url = null;
     public string $heading_font_size = '24px';
     public string $heading_font_weight = 'bold';
     public string $heading_font_style = 'normal';
@@ -32,6 +34,7 @@ class BrandingSettings extends Component
     public $small_heading_font_file;
     public string $small_heading_font_family = 'Fira Sans';
     public ?string $small_heading_font_path = null;
+    public ?string $preview_small_heading_font_url = null;
     public string $small_heading_font_size = '14px';
     public string $small_heading_font_weight = 'bold';
     public string $small_heading_font_style = 'normal';
@@ -41,16 +44,97 @@ class BrandingSettings extends Component
     public $body_font_file;
     public string $body_font_family = 'Fira Sans';
     public ?string $body_font_path = null;
+    public ?string $preview_body_font_url = null;
     public string $body_font_size = '12px';
     public string $body_font_weight = 'normal';
     public string $body_font_style = 'normal';
     public string $body_font_color = '#333333';
 
     public string $success = '';
+    public int $previewKey = 0;
 
     public function mount()
     {
         $this->loadSettings();
+    }
+
+    public function updatedCompanyLogo()
+    {
+        if ($this->company_logo) {
+            $this->preview_logo_url = $this->company_logo->temporaryUrl();
+        }
+        $this->reloadPreview();
+    }
+
+    public function updatedHeadingFontFile()
+    {
+        if ($this->heading_font_file) {
+            $this->preview_heading_font_url = $this->heading_font_file->temporaryUrl();
+        }
+        $this->reloadPreview();
+    }
+
+    public function updatedSmallHeadingFontFile()
+    {
+        if ($this->small_heading_font_file) {
+            $this->preview_small_heading_font_url = $this->small_heading_font_file->temporaryUrl();
+        }
+        $this->reloadPreview();
+    }
+
+    public function updatedBodyFontFile()
+    {
+        if ($this->body_font_file) {
+            $this->preview_body_font_url = $this->body_font_file->temporaryUrl();
+        }
+        $this->reloadPreview();
+    }
+
+    // Reload preview when any property changes
+    public function updated($property)
+    {
+        // Reload preview for all styling properties
+        if (str_contains($property, 'font_') || str_contains($property, '_color')) {
+            $this->reloadPreview();
+        }
+    }
+
+    public function reloadPreview()
+    {
+        $this->previewKey++;
+    }
+
+    public function getHeadingFontUrl()
+    {
+        if ($this->preview_heading_font_url) {
+            return $this->preview_heading_font_url;
+        }
+        if ($this->heading_font_path) {
+            return Storage::disk('public')->url($this->heading_font_path);
+        }
+        return null;
+    }
+
+    public function getSmallHeadingFontUrl()
+    {
+        if ($this->preview_small_heading_font_url) {
+            return $this->preview_small_heading_font_url;
+        }
+        if ($this->small_heading_font_path) {
+            return Storage::disk('public')->url($this->small_heading_font_path);
+        }
+        return null;
+    }
+
+    public function getBodyFontUrl()
+    {
+        if ($this->preview_body_font_url) {
+            return $this->preview_body_font_url;
+        }
+        if ($this->body_font_path) {
+            return Storage::disk('public')->url($this->body_font_path);
+        }
+        return null;
     }
 
     public function loadSettings()
@@ -114,10 +198,21 @@ class BrandingSettings extends Component
     public function save()
     {
         $this->validate([
-            'company_logo' => 'nullable|image|max:1024',
+            'company_logo' => 'nullable|file|mimes:jpeg,jpg,png,gif,svg|max:1024',
 
             // Heading font
-            'heading_font_file' => 'nullable|file|mimes:ttf,otf',
+            'heading_font_file' => [
+                'nullable',
+                'file',
+                function ($attribute, $value, $fail) {
+                    if ($value) {
+                        $extension = strtolower($value->getClientOriginalExtension());
+                        if (! in_array($extension, ['ttf', 'otf'])) {
+                            $fail('Die Schriftart-Datei muss eine Datei vom Typ: ttf, otf sein.');
+                        }
+                    }
+                },
+            ],
             'heading_font_family' => 'required|string|max:255',
             'heading_font_size' => 'required|string|max:10',
             'heading_font_weight' => 'required|in:normal,bold',
@@ -125,7 +220,18 @@ class BrandingSettings extends Component
             'heading_font_color' => 'required|string|max:7',
 
             // Small heading font
-            'small_heading_font_file' => 'nullable|file|mimes:ttf,otf',
+            'small_heading_font_file' => [
+                'nullable',
+                'file',
+                function ($attribute, $value, $fail) {
+                    if ($value) {
+                        $extension = strtolower($value->getClientOriginalExtension());
+                        if (! in_array($extension, ['ttf', 'otf'])) {
+                            $fail('Die Schriftart-Datei muss eine Datei vom Typ: ttf, otf sein.');
+                        }
+                    }
+                },
+            ],
             'small_heading_font_family' => 'required|string|max:255',
             'small_heading_font_size' => 'required|string|max:10',
             'small_heading_font_weight' => 'required|in:normal,bold',
@@ -133,7 +239,18 @@ class BrandingSettings extends Component
             'small_heading_font_color' => 'required|string|max:7',
 
             // Body font
-            'body_font_file' => 'nullable|file|mimes:ttf,otf',
+            'body_font_file' => [
+                'nullable',
+                'file',
+                function ($attribute, $value, $fail) {
+                    if ($value) {
+                        $extension = strtolower($value->getClientOriginalExtension());
+                        if (! in_array($extension, ['ttf', 'otf'])) {
+                            $fail('Die Schriftart-Datei muss eine Datei vom Typ: ttf, otf sein.');
+                        }
+                    }
+                },
+            ],
             'body_font_family' => 'required|string|max:255',
             'body_font_size' => 'required|string|max:10',
             'body_font_weight' => 'required|in:normal,bold',
@@ -153,26 +270,26 @@ class BrandingSettings extends Component
 
         // Handle heading font upload
         if ($this->heading_font_file) {
-            if ($this->heading_font_path && Storage::exists($this->heading_font_path)) {
-                Storage::delete($this->heading_font_path);
+            if ($this->heading_font_path && Storage::disk('public')->exists($this->heading_font_path)) {
+                Storage::disk('public')->delete($this->heading_font_path);
             }
-            $this->heading_font_path = $this->heading_font_file->storeAs('fonts', 'heading-' . $this->heading_font_file->getClientOriginalName());
+            $this->heading_font_path = $this->heading_font_file->storeAs('fonts', 'heading-' . $this->heading_font_file->getClientOriginalName(), 'public');
         }
 
         // Handle small heading font upload
         if ($this->small_heading_font_file) {
-            if ($this->small_heading_font_path && Storage::exists($this->small_heading_font_path)) {
-                Storage::delete($this->small_heading_font_path);
+            if ($this->small_heading_font_path && Storage::disk('public')->exists($this->small_heading_font_path)) {
+                Storage::disk('public')->delete($this->small_heading_font_path);
             }
-            $this->small_heading_font_path = $this->small_heading_font_file->storeAs('fonts', 'small-heading-' . $this->small_heading_font_file->getClientOriginalName());
+            $this->small_heading_font_path = $this->small_heading_font_file->storeAs('fonts', 'small-heading-' . $this->small_heading_font_file->getClientOriginalName(), 'public');
         }
 
         // Handle body font upload
         if ($this->body_font_file) {
-            if ($this->body_font_path && Storage::exists($this->body_font_path)) {
-                Storage::delete($this->body_font_path);
+            if ($this->body_font_path && Storage::disk('public')->exists($this->body_font_path)) {
+                Storage::disk('public')->delete($this->body_font_path);
             }
-            $this->body_font_path = $this->body_font_file->storeAs('fonts', 'body-' . $this->body_font_file->getClientOriginalName());
+            $this->body_font_path = $this->body_font_file->storeAs('fonts', 'body-' . $this->body_font_file->getClientOriginalName(), 'public');
         }
 
         // Save font styles

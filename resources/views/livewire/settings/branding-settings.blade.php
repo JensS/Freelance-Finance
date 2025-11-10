@@ -1,3 +1,6 @@
+@php
+    use Illuminate\Support\Facades\Storage;
+@endphp
 <div>
     <div class="mb-6">
         <h1 class="text-2xl font-semibold text-gray-900">Branding Einstellungen</h1>
@@ -20,7 +23,10 @@
         </div>
     @endif
 
-    <form wire:submit="save" class="space-y-6">
+    <div class="flex gap-6">
+        <!-- Settings Form (40%) -->
+        <div class="w-2/5">
+            <form wire:submit="save" class="space-y-6">
         <!-- Company Logo -->
         <div class="bg-white shadow rounded-lg">
             <div class="px-4 py-5 sm:p-6">
@@ -87,7 +93,7 @@
                             Schriftart-Name
                         </label>
                         <input
-                            wire:model="heading_font_family"
+                            wire:model.live="heading_font_family"
                             type="text"
                             id="heading_font_family"
                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
@@ -105,7 +111,7 @@
                                 Schriftgröße
                             </label>
                             <input
-                                wire:model="heading_font_size"
+                                wire:model.live="heading_font_size"
                                 type="text"
                                 id="heading_font_size"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
@@ -121,7 +127,7 @@
                                 Schriftstärke
                             </label>
                             <select
-                                wire:model="heading_font_weight"
+                                wire:model.live="heading_font_weight"
                                 id="heading_font_weight"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             >
@@ -138,7 +144,7 @@
                                 Schriftstil
                             </label>
                             <select
-                                wire:model="heading_font_style"
+                                wire:model.live="heading_font_style"
                                 id="heading_font_style"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             >
@@ -158,13 +164,13 @@
                         </label>
                         <div class="mt-1 flex items-center">
                             <input
-                                wire:model="heading_font_color"
+                                wire:model.live="heading_font_color"
                                 type="color"
                                 id="heading_font_color"
                                 class="h-10 w-20 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             >
                             <input
-                                wire:model="heading_font_color"
+                                wire:model.live="heading_font_color"
                                 type="text"
                                 class="ml-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                 placeholder="#333333"
@@ -212,7 +218,7 @@
                             Schriftart-Name
                         </label>
                         <input
-                            wire:model="small_heading_font_family"
+                            wire:model.live="small_heading_font_family"
                             type="text"
                             id="small_heading_font_family"
                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
@@ -230,7 +236,7 @@
                                 Schriftgröße
                             </label>
                             <input
-                                wire:model="small_heading_font_size"
+                                wire:model.live="small_heading_font_size"
                                 type="text"
                                 id="small_heading_font_size"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
@@ -246,7 +252,7 @@
                                 Schriftstärke
                             </label>
                             <select
-                                wire:model="small_heading_font_weight"
+                                wire:model.live="small_heading_font_weight"
                                 id="small_heading_font_weight"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             >
@@ -263,7 +269,7 @@
                                 Schriftstil
                             </label>
                             <select
-                                wire:model="small_heading_font_style"
+                                wire:model.live="small_heading_font_style"
                                 id="small_heading_font_style"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             >
@@ -283,13 +289,13 @@
                         </label>
                         <div class="mt-1 flex items-center">
                             <input
-                                wire:model="small_heading_font_color"
+                                wire:model.live="small_heading_font_color"
                                 type="color"
                                 id="small_heading_font_color"
                                 class="h-10 w-20 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             >
                             <input
-                                wire:model="small_heading_font_color"
+                                wire:model.live="small_heading_font_color"
                                 type="text"
                                 class="ml-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                 placeholder="#333333"
@@ -337,7 +343,7 @@
                             Schriftart-Name
                         </label>
                         <input
-                            wire:model="body_font_family"
+                            wire:model.live="body_font_family"
                             type="text"
                             id="body_font_family"
                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
@@ -355,7 +361,7 @@
                                 Schriftgröße
                             </label>
                             <input
-                                wire:model="body_font_size"
+                                wire:model.live="body_font_size"
                                 type="text"
                                 id="body_font_size"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
@@ -371,7 +377,7 @@
                                 Schriftstärke
                             </label>
                             <select
-                                wire:model="body_font_weight"
+                                wire:model.live="body_font_weight"
                                 id="body_font_weight"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             >
@@ -388,7 +394,7 @@
                                 Schriftstil
                             </label>
                             <select
-                                wire:model="body_font_style"
+                                wire:model.live="body_font_style"
                                 id="body_font_style"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             >
@@ -408,13 +414,13 @@
                         </label>
                         <div class="mt-1 flex items-center">
                             <input
-                                wire:model="body_font_color"
+                                wire:model.live="body_font_color"
                                 type="color"
                                 id="body_font_color"
                                 class="h-10 w-20 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             >
                             <input
-                                wire:model="body_font_color"
+                                wire:model.live="body_font_color"
                                 type="text"
                                 class="ml-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                 placeholder="#333333"
@@ -428,14 +434,39 @@
             </div>
         </div>
 
-        <!-- Submit Button -->
-        <div class="flex justify-end">
-            <button
-                type="submit"
-                class="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-            >
-                Einstellungen speichern
-            </button>
+                <!-- Submit Button -->
+                <div class="flex justify-end">
+                    <button
+                        type="submit"
+                        class="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                    >
+                        Einstellungen speichern
+                    </button>
+                </div>
+            </form>
         </div>
-    </form>
+
+        <!-- Live Preview (60%) -->
+        <div class="w-3/5">
+            <div class="bg-white shadow rounded-lg sticky top-6">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-medium leading-6 text-gray-900">Live-Vorschau</h3>
+                        <a href="{{ route('preview.invoice.pdf') }}" target="_blank" class="text-sm text-indigo-600 hover:text-indigo-900">
+                            Als PDF öffnen →
+                        </a>
+                    </div>
+
+                    <!-- Invoice Preview (iframe) -->
+                    <div class="border border-gray-300 rounded-lg bg-white overflow-hidden" style="height: calc(100vh - 200px);">
+                        <iframe
+                            src="{{ route('preview.invoice.html') }}?v={{ $previewKey }}"
+                            class="w-full h-full border-0"
+                            wire:key="preview-{{ $previewKey }}"
+                        ></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

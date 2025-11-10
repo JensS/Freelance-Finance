@@ -42,30 +42,30 @@
     <title>Rechnung {{ $invoice->invoice_number }}</title>
     <style>
         /* Heading Font */
-        @if($fontStyles['heading']['font_path'] && file_exists(storage_path('app/' . $fontStyles['heading']['font_path'])))
+        @if($fontStyles['heading']['font_path'] && file_exists(storage_path('app/public/' . $fontStyles['heading']['font_path'])))
         @font-face {
             font-family: '{{ $fontStyles['heading']['font_family'] }}';
-            src: url('{{ storage_path('app/' . $fontStyles['heading']['font_path']) }}') format('truetype');
+            src: url('{{ storage_path('app/public/' . $fontStyles['heading']['font_path']) }}') format('truetype');
             font-weight: {{ $fontStyles['heading']['font_weight'] }};
             font-style: {{ $fontStyles['heading']['font_style'] }};
         }
         @endif
 
         /* Small Heading Font */
-        @if($fontStyles['small_heading']['font_path'] && file_exists(storage_path('app/' . $fontStyles['small_heading']['font_path'])))
+        @if($fontStyles['small_heading']['font_path'] && file_exists(storage_path('app/public/' . $fontStyles['small_heading']['font_path'])))
         @font-face {
             font-family: '{{ $fontStyles['small_heading']['font_family'] }}';
-            src: url('{{ storage_path('app/' . $fontStyles['small_heading']['font_path']) }}') format('truetype');
+            src: url('{{ storage_path('app/public/' . $fontStyles['small_heading']['font_path']) }}') format('truetype');
             font-weight: {{ $fontStyles['small_heading']['font_weight'] }};
             font-style: {{ $fontStyles['small_heading']['font_style'] }};
         }
         @endif
 
         /* Body Font */
-        @if($fontStyles['body']['font_path'] && file_exists(storage_path('app/' . $fontStyles['body']['font_path'])))
+        @if($fontStyles['body']['font_path'] && file_exists(storage_path('app/public/' . $fontStyles['body']['font_path'])))
         @font-face {
             font-family: '{{ $fontStyles['body']['font_family'] }}';
-            src: url('{{ storage_path('app/' . $fontStyles['body']['font_path']) }}') format('truetype');
+            src: url('{{ storage_path('app/public/' . $fontStyles['body']['font_path']) }}') format('truetype');
             font-weight: {{ $fontStyles['body']['font_weight'] }};
             font-style: {{ $fontStyles['body']['font_style'] }};
         }
