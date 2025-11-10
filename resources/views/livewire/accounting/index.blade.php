@@ -184,7 +184,7 @@
                         Kategorie
                     </th>
                     <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Betrag
+                        Netto / Brutto
                     </th>
                     <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Validiert
@@ -218,8 +218,16 @@
                                 </span>
                             @endif
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium {{ $transaction->amount > 0 ? 'text-green-600' : 'text-red-600' }}">
-                            {{ $transaction->amount > 0 ? '+' : '' }}{{ number_format($transaction->amount, 2, ',', '.') }} €
+                        <td class="px-6 py-4 text-sm text-right {{ $transaction->amount > 0 ? 'text-green-600' : 'text-red-600' }}">
+                            <div class="font-medium">
+                                {{ $transaction->amount > 0 ? '+' : '' }}{{ number_format($transaction->amount, 2, ',', '.') }} €
+                            </div>
+                            @if($transaction->net_amount !== null && $transaction->vat_rate !== null)
+                                <div class="text-xs text-gray-500 mt-0.5">
+                                    Netto: {{ number_format($transaction->net_amount, 2, ',', '.') }} €
+                                    ({{ number_format($transaction->vat_rate, 0) }}% MwSt.)
+                                </div>
+                            @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-center">
                             <input

@@ -14,6 +14,9 @@ class BankTransaction extends Model
         'type',
         'category',
         'amount',
+        'net_amount',
+        'vat_rate',
+        'vat_amount',
         'currency',
         'original_amount',
         'original_currency',
@@ -29,6 +32,9 @@ class BankTransaction extends Model
     protected $casts = [
         'transaction_date' => 'date',
         'amount' => 'decimal:2',
+        'net_amount' => 'decimal:2',
+        'vat_rate' => 'decimal:2',
+        'vat_amount' => 'decimal:2',
         'original_amount' => 'decimal:2',
         'is_validated' => 'boolean',
         'is_business_expense' => 'boolean',
@@ -56,8 +62,35 @@ class BankTransaction extends Model
         if (str_contains($this->type, '19%')) {
             return 19;
         }
+        if (str_contains($this->type, 'Reverse Charge')) {
+            return 0;
+        }
 
         return 0;
+    }
+
+    /**
+     * Calculate and set net/gross breakdown from gross amount
+     */
+    public function calculateNetGross(): void
+    {
+        if ($this->amount === null) {
+            return;
+        }
+
+        // Get VAT rate from type
+        $vatRate = $this->getVatRate();
+        $this->vat_rate = $vatRate;
+
+        // Calculate net amount (reverse calculation from gross)
+        if ($vatRate > 0) {
+            $this->net_amount = round($this->amount / (1 + ($vatRate / 100)), 2);
+        } else {
+            $this->net_amount = $this->amount;
+        }
+
+        // Calculate VAT amount
+        $this->vat_amount = $this->amount - $this->net_amount;
     }
 
     /**

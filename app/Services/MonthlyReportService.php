@@ -27,7 +27,7 @@ class MonthlyReportService
         $invoiceStats = [
             'count' => $invoices->count(),
             'total' => $invoices->sum('total'),
-            'tax' => $invoices->sum('tax'),
+            'vat_amount' => $invoices->sum('vat_amount'),
             'subtotal' => $invoices->sum('subtotal'),
             'paid_count' => $invoices->whereNotNull('paperless_document_id')->count(),
         ];
@@ -66,7 +66,7 @@ class MonthlyReportService
             'start_date' => $startDate,
             'end_date' => $endDate,
             'total_revenue' => $invoiceStats['total'],
-            'total_tax' => $invoiceStats['tax'],
+            'total_vat' => $invoiceStats['vat_amount'],
             'net_revenue' => $invoiceStats['subtotal'],
             'business_expenses' => $transactionStats['business_expenses'],
             'profit' => $profit,

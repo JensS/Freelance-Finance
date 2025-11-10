@@ -202,7 +202,7 @@
             </div>
             <div class="summary-row">
                 <div class="summary-label">Umsatzsteuer:</div>
-                <div class="summary-value">{{ number_format($summary['total_tax'], 2, ',', '.') }} EUR</div>
+                <div class="summary-value">{{ number_format($summary['total_vat'], 2, ',', '.') }} EUR</div>
             </div>
             <div class="summary-row">
                 <div class="summary-label">Nettoumsatz:</div>
@@ -259,14 +259,14 @@
                 <td>{{ $invoice->issue_date ? $invoice->issue_date->format($dateFormat) : '' }}</td>
                 <td>{{ $invoice->customer->name }}</td>
                 <td class="text-right">{{ number_format($invoice->subtotal, 2, ',', '.') }}</td>
-                <td class="text-right">{{ number_format($invoice->tax, 2, ',', '.') }}</td>
+                <td class="text-right">{{ number_format($invoice->vat_amount, 2, ',', '.') }}</td>
                 <td class="text-right">{{ number_format($invoice->total, 2, ',', '.') }}</td>
             </tr>
             @endforeach
             <tr style="border-top: 2px solid #000; font-weight: 500;">
                 <td colspan="3">Summe</td>
                 <td class="text-right">{{ number_format($invoice_stats['subtotal'], 2, ',', '.') }}</td>
-                <td class="text-right">{{ number_format($invoice_stats['tax'], 2, ',', '.') }}</td>
+                <td class="text-right">{{ number_format($invoice_stats['vat_amount'], 2, ',', '.') }}</td>
                 <td class="text-right">{{ number_format($invoice_stats['total'], 2, ',', '.') }}</td>
             </tr>
         </tbody>
@@ -330,7 +330,9 @@
                 <th>Datum</th>
                 <th>Beschreibung</th>
                 <th>Kategorie</th>
-                <th class="text-right">Betrag</th>
+                <th class="text-right">Netto</th>
+                <th class="text-right">MwSt.</th>
+                <th class="text-right">Brutto</th>
             </tr>
         </thead>
         <tbody>
@@ -339,11 +341,28 @@
                 <td>{{ $expense->transaction_date ? $expense->transaction_date->format($dateFormat) : '' }}</td>
                 <td>{{ Str::limit($expense->description, 60) }}</td>
                 <td>{{ $expense->category ?: '-' }}</td>
-                <td class="text-right">{{ number_format(abs($expense->amount), 2, ',', '.') }} EUR</td>
+                <td class="text-right">
+                    @if($expense->net_amount !== null)
+                        {{ number_format(abs($expense->net_amount), 2, ',', '.') }}
+                    @else
+                        {{ number_format(abs($expense->amount), 2, ',', '.') }}
+                    @endif
+                </td>
+                <td class="text-right">
+                    @if($expense->vat_amount !== null)
+                        {{ number_format(abs($expense->vat_amount), 2, ',', '.') }}
+                        @if($expense->vat_rate)
+                            <span style="font-size: 8pt; color: #6b7280;">({{ number_format($expense->vat_rate, 0) }}%)</span>
+                        @endif
+                    @else
+                        -
+                    @endif
+                </td>
+                <td class="text-right">{{ number_format(abs($expense->amount), 2, ',', '.') }}</td>
             </tr>
             @endforeach
             <tr style="border-top: 2px solid #000; font-weight: 500;">
-                <td colspan="3">Summe Betriebsausgaben</td>
+                <td colspan="5">Summe Betriebsausgaben</td>
                 <td class="text-right">{{ number_format($transaction_stats['business_expenses'], 2, ',', '.') }} EUR</td>
             </tr>
         </tbody>
