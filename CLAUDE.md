@@ -1,0 +1,309 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+**Freelance Finance Hub** is a self-hosted Laravel-based accounting and invoicing system for creative freelancers. It handles invoice/quote creation, monthly tax document preparation, and financial analysis with AI-powered spending recommendations.
+
+## Technology Stack
+
+- **Backend**: Laravel 12 (PHP)
+- **Database**: PostgreSQL 18 with JSON support
+- **Docker**: Laravel Sail for development
+- **Frontend**: Livewire 3 + Alpine.js (reactive UI without SPA complexity)
+- **Styling**: Tailwind CSS 4.0
+- **PDF Generation**: barryvdh/laravel-dompdf (with custom font support)
+- **PDF Parsing**: smalot/pdfparser (for bank statement text extraction)
+- **AI Integration**: Ollama API at http://jens.pc.local:11434 (configurable via .env)
+- **Queue**: Database queue (Redis optional)
+
+## Development Commands
+
+### Setup & Installation
+```bash
+# Install dependencies
+./vendor/bin/sail composer install
+./vendor/bin/sail npm install
+
+# Start Docker environment
+./vendor/bin/sail up -d
+
+# Run migrations
+./vendor/bin/sail artisan migrate
+
+# Seed default settings
+./vendor/bin/sail artisan db:seed
+```
+
+### Development
+```bash
+# Build frontend assets
+./vendor/bin/sail npm run dev
+
+# Build for production
+./vendor/bin/sail npm run build
+
+# Run tests
+./vendor/bin/sail artisan test
+
+# Run specific test
+./vendor/bin/sail artisan test --filter=InvoiceCreationTest
+
+# Clear caches
+./vendor/bin/sail artisan optimize:clear
+```
+
+### Code Quality
+```bash
+# Run Laravel Pint (code style fixer)
+./vendor/bin/sail pint
+
+# Run PHPStan (static analysis)
+./vendor/bin/sail composer phpstan
+```
+
+## Core Architecture
+
+### 1. Invoice & Quote Management
+- **Purpose**: Create invoices and quotes with autocomplete for customers and line items
+- **Key Features**:
+  - Two invoice types: Project Invoice (with project details, service period, location) and General Invoice
+  - Autocomplete learns new customers and line items automatically
+  - Export to Paperless server as PDF with appropriate tags
+- **Models**: `Invoice`, `Quote`, `Customer`, `InvoiceLineItem`
+- **Livewire Components**: `CreateInvoice`, `CreateQuote`
+
+### 2. Monthly Accounting Preparation
+- **Purpose**: Prepare monthly tax documents for the tax advisor (due by 10th of each month)
+- **Workflow**:
+  1. Upload bank statement PDF (Kontist format)
+  2. Parse transactions automatically
+  3. Search Paperless for matching receipts using date (±7 day buffer) and merchant name
+  4. Show validation page where user corrects parsed data and adds notes
+  5. Allow adding cash receipts (not in bank statement)
+  6. Generate monthly report PDF for tax advisor
+- **Models**: `BankTransaction`, `Expense`, `CashReceipt`
+- **Livewire Components**: `BankStatementUpload`, `TransactionValidation`, `MonthlyReportGenerator`
+
+### 3. Financial Reporting & Analysis
+- **Purpose**: Generate monthly and yearly financial reports with visualizations
+- **Data Sources**:
+  - Invoices from database (income)
+  - Expenses from monthly accounting preparation
+  - Annual income tax (user-entered)
+- **Features**: Charts and graphs showing income/expense trends
+- **Models**: `FinancialReport`, `TaxPayment`
+- **Livewire Components**: `FinancialDashboard`, `ReportViewer`
+
+### 4. AI-Powered Recommendations
+- **Purpose**: Provide spending analysis and improvement suggestions
+- **Process**:
+  1. Send all transactions with user notes to local Ollama API
+  2. AI analyzes spending patterns
+  3. Display recommendations in UI
+  4. Archive recommendations per month
+- **Integration**: `App\Services\OllamaService`
+- **Models**: `AiRecommendation`
+- **Livewire Components**: `AiRecommendationsPanel`
+
+## Bank Statement Parsing
+
+### Kontist Bank Statement Format
+The system parses Kontist bank statements (see `/sample-documents/`). Key fields:
+
+- **Date**: Format DD.MM.YY
+- **Correspondent**: Merchant/company name (first line of BUCHUNGSTEXT)
+- **Type**: Pre-categorized by Kontist as:
+  - `Geschäftsausgabe 0%` (business expense, 0% VAT - international services)
+  - `Geschäftsausgabe 7%` (business expense, 7% VAT - reduced rate)
+  - `Geschäftsausgabe 19%` (business expense, 19% VAT - standard rate)
+  - `Einkommen 19%` (income with 19% VAT)
+  - `Reverse Charge` (reverse charge mechanism for EU services)
+  - `Privat` (private transaction - to be ignored)
+  - `Umsatzsteuerstattung` (VAT refund)
+  - `Steuerzahlung` (tax payment)
+  - `Nicht kategorisiert` (not categorized)
+- **Title**: Additional transaction details/reference
+- **Amount**: Negative for expenses, positive for income (EUR)
+
+### Validation Interface Requirements
+After parsing, users must be able to:
+- Review all extracted fields (Date, Correspondent, Title, Type)
+- Correct any field EXCEPT Amount (read-only)
+- Add a NOTE to each transaction
+- Mark transactions as Private (to be excluded)
+
+## Paperless Integration
+
+### Server Details
+- **URL**: http://128.140.41.24:8000/
+- **API Docs**: https://docs.paperless-ngx.com/api/
+- **Storage Path**: "Selbstständigkeit" (only path needed for this use case)
+
+### Document Classification
+**Tags**:
+- `Eingangsrechnung` (incoming invoice/expense receipt)
+- `Ausgangsrechnung` (outgoing invoice - created by us)
+- `Angebot` (quote)
+- `Bank Statement` (monthly bank statement)
+- `Bewirtung` (entertainment/meal receipt)
+- `Barbeleg` (cash receipt)
+
+**Document Types**:
+- `Eingangsrechnungen` (incoming invoices - includes Barbeleg)
+- `Ausgangsrechnungen` (outgoing invoices)
+- `Kontoauszug` (bank statements)
+
+### Invoice Matching Logic
+When matching bank transactions to Paperless documents:
+- **Date range**: Transaction date ±7 days (configurable buffer)
+- **Merchant matching**: Fuzzy match on correspondent name
+- **Critical**: Invoice dates and bank posting dates often differ due to processing delays
+- **Best practice**: For monthly accounting, search invoices from ~5 days before month start to ~5 days after month end
+
+Refer to `/Invoice_Collection_Knowledge_Base.md` for merchant name variations and common payment patterns.
+
+## PDF Generation
+
+### Invoice and Quote PDFs
+Professional PDF templates are available matching the reference designs in `sample-documents/`.
+
+**Features**:
+- Clean, professional layout with company branding
+- German formatting (dates, currency with comma decimals)
+- Automatic company info from Settings
+- Project information display (for project-type invoices/quotes)
+- Line items table with calculations
+- Legal text and payment terms
+- Bank details footer
+
+**Usage**:
+```php
+// Generate PDF
+$invoice = Invoice::with('customer')->find($id);
+$pdf = $invoice->generatePdf();
+
+// Download
+return $pdf->download($invoice->getPdfFilename());
+
+// Stream to browser
+return $pdf->stream();
+
+// Save to storage
+$pdf->save(storage_path("invoices/{$invoice->getPdfFilename()}"));
+```
+
+**Templates**:
+- `resources/views/pdfs/invoice.blade.php` - Invoice PDF template
+- `resources/views/pdfs/quote.blade.php` - Quote PDF template
+
+Both use company settings from the database for dynamic content (address, bank details, tax info).
+
+## Settings & Configuration
+
+### Company Defaults (Configurable in UI)
+Store in `settings` table as JSON:
+```json
+{
+  "company_name": "Jens Sage",
+  "company_address": {
+    "street": "Your Street 1",
+    "city": "Berlin",
+    "zip": "10115"
+  },
+  "bank_details": {
+    "iban": "DE1234567890",
+    "bic": "BELADEBEXXX"
+  },
+  "tax_number": "12/345/67890",
+  "eu_vat_id": "DE123456789",
+  "vat_rate": 19
+}
+```
+
+### Environment Variables
+```bash
+# Authentication
+APP_PASSWORD=your_simple_password
+
+# Ollama AI
+OLLAMA_API_URL=http://jens.pc.local:11434
+
+# Paperless
+PAPERLESS_URL=http://128.140.41.24:8000/
+PAPERLESS_API_TOKEN=your_token_here
+
+# Database
+DB_CONNECTION=pgsql
+DB_HOST=pgsql
+DB_PORT=5432
+DB_DATABASE=freelance_finance
+DB_USERNAME=sail
+DB_PASSWORD=password
+```
+
+## Monthly Report Format
+
+The monthly report PDF for the tax advisor should include:
+
+1. **Income Section**: List all invoices received (Einkommen)
+2. **Expense Section**:
+   - Bank transactions (Geschäftsausgaben)
+   - Cash receipts (Barbelege)
+3. **For Each Transaction**:
+   - Date
+   - Correspondent
+   - Amount
+   - VAT rate (0%, 7%, 19%)
+   - User note (if any)
+   - Paperless storage path: `Selbstständigkeit/[filename]`
+   - Paperless document ID for easy reference
+
+**Purpose**: Make the tax advisor's life easier by providing organized, annotated financial data.
+
+## AI Recommendation Prompts
+
+When sending data to Ollama API:
+- Include all transactions with user notes
+- Request spending pattern analysis
+- Ask for specific improvement suggestions
+- Archive responses by month for historical tracking
+
+Example prompt structure:
+```
+Analyze the following monthly expenses:
+[Transaction list with notes]
+
+Provide:
+1. Spending pattern analysis
+2. Areas of concern or overspending
+3. Specific actionable recommendations for improvement
+4. Budget suggestions for next month
+```
+
+## Authentication
+
+Simple password-based authentication:
+- Password stored in `.env` as `APP_PASSWORD`
+- Single-user system
+- Middleware: `App\Http\Middleware\SimpleAuth`
+- Login page: Livewire component `Login`
+
+## Important Notes
+
+1. **Invoice Numbering**: Ensure sequential invoice numbers are maintained (for German tax compliance)
+2. **Date Buffers**: Always use ±7 day buffer when matching transactions to invoices
+3. **Private Transactions**: Must be excluded from tax reports but logged for reconciliation
+4. **VAT Handling**: Correctly differentiate between 0% (international), 7% (reduced), and 19% (standard) rates
+5. **Reverse Charge**: EU B2B services follow reverse charge mechanism (no VAT charged)
+6. **PDF Templates**: Invoice PDFs must include all legally required information (company details, tax numbers, payment terms)
+7. **Paperless Tags**: Always use correct tag combinations (e.g., Eingangsrechnung + Geschäftsausgabe)
+
+## Sample Documents
+
+Reference documents in `/sample-documents/`:
+- `Ageras_GmbH_Kontist_Kontoauszug_9_2025.pdf` - Bank statement format
+- `2025-08-12 Jens Sage Rechnung Sage 503.pdf` - Outgoing invoice example
+- `251021-Jens Sage-0001077.pdf` - Another invoice example
+- `Angebot 2025-PC-Sust-Vid-v1.pdf` - Quote example
