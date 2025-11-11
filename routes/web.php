@@ -6,6 +6,7 @@ use App\Livewire\Customers\Create as CustomersCreate;
 use App\Livewire\Customers\Edit as CustomersEdit;
 use App\Livewire\Customers\Index as CustomersIndex;
 use App\Livewire\Dashboard;
+use App\Livewire\Documents\VerifyImport;
 use App\Livewire\Invoices\Create as InvoicesCreate;
 use App\Livewire\Invoices\Edit as InvoicesEdit;
 use App\Livewire\Invoices\Index as InvoicesIndex;
@@ -33,6 +34,9 @@ Route::post('/logout', function () {
 Route::middleware(['auth.simple'])->group(function () {
     // Dashboard
     Route::get('/dashboard', Dashboard::class)->name('dashboard');
+
+    // Document verification (shared across invoices, quotes, expenses)
+    Route::get('/documents/verify-import', VerifyImport::class)->name('documents.verify-import');
 
     // Invoices
     Route::prefix('invoices')->name('invoices.')->group(function () {

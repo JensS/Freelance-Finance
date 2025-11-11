@@ -56,6 +56,14 @@ class PaperlessService
             return null;
         }
 
+        // Get storage path from settings if not provided in metadata
+        if (! isset($metadata['storage_path'])) {
+            $storagePath = \App\Models\Setting::get('paperless_storage_path');
+            if ($storagePath) {
+                $metadata['storage_path'] = $storagePath;
+            }
+        }
+
         try {
             $response = $this->client()->attach(
                 'document',
@@ -67,6 +75,7 @@ class PaperlessService
                 'document_type' => $metadata['document_type'] ?? null,
                 'tags' => $metadata['tags'] ?? null,
                 'created' => $metadata['created'] ?? null,
+                'storage_path' => $metadata['storage_path'] ?? null,
             ]));
 
             if ($response->successful()) {
@@ -131,12 +140,21 @@ class PaperlessService
             return [];
         }
 
+        // Get storage path from settings if not provided in filters
+        if (! isset($filters['storage_path_id'])) {
+            $storagePathId = \App\Models\Setting::get('paperless_storage_path');
+            if ($storagePathId) {
+                $filters['storage_path_id'] = $storagePathId;
+            }
+        }
+
         try {
             $params = array_filter([
                 'query' => $query,
                 'correspondent__id' => $filters['correspondent_id'] ?? null,
                 'document_type__id' => $filters['document_type_id'] ?? null,
                 'tags__id__all' => $filters['tags'] ?? null,
+                'storage_path__id' => $filters['storage_path_id'] ?? null,
             ]);
 
             $response = $this->client()->get($this->baseUrl.'/api/documents/', $params);
@@ -409,6 +427,12 @@ class PaperlessService
                 'ordering' => '-created',
             ];
 
+            // Add storage path filter from settings
+            $storagePathId = \App\Models\Setting::get('paperless_storage_path');
+            if ($storagePathId) {
+                $params['storage_path__id'] = $storagePathId;
+            }
+
             // Add date filter if provided
             if (isset($options['date_after'])) {
                 $params['created__date__gte'] = $options['date_after'];
@@ -450,6 +474,51 @@ class PaperlessService
         foreach ($tags as $tag) {
             if ($tag['name'] === $tagName) {
                 return $tag['id'];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Get all storage paths from Paperless
+     *
+     * @return array List of storage paths
+     */
+    public function getStoragePaths(): array
+    {
+        try {
+            $response = $this->client()->get($this->baseUrl.'/api/storage_paths/');
+
+            if ($response->successful()) {
+                return $response->json('results', []);
+            }
+
+            Log::error('Paperless get storage paths failed', [
+                'status' => $response->status(),
+            ]);
+
+            return [];
+        } catch (\Exception $e) {
+            Log::error('Paperless get storage paths exception', ['error' => $e->getMessage()]);
+
+            return [];
+        }
+    }
+
+    /**
+     * Get storage path ID by name
+     *
+     * @param  string  $pathName  Storage path name to search for
+     * @return int|null Storage path ID or null if not found
+     */
+    public function getStoragePathIdByName(string $pathName): ?int
+    {
+        $paths = $this->getStoragePaths();
+
+        foreach ($paths as $path) {
+            if ($path['name'] === $pathName) {
+                return $path['id'];
             }
         }
 

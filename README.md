@@ -45,12 +45,26 @@ Visit `http://localhost:8080` to access the application.
 
 Copy `.env.example` to `.env` and configure:
 - Database credentials
-- Paperless integration URL
+- Paperless integration URL and API token
 - Ollama API endpoint (optional)
+
+### Paperless Storage Path
+
+Configure which Paperless storage path to use for all document operations:
+
+1. Navigate to **Settings → Paperless Integration**
+2. Select your storage path from the dropdown (e.g., "Selbstständigkeit")
+3. Save settings
+
+**What it does:**
+- Automatically filters all document searches to your selected path
+- Uploads all documents (invoices, quotes) to this path
+- Only shows expenses from documents in this path
+- Keeps your business documents organized and separated from other Paperless content
 
 ## Usage
 
-1. **Settings**: Configure company details in Settings → Company Information
+1. **Settings**: Configure company details and Paperless storage path
 2. **Customers**: Add customer information for invoicing
 3. **Invoices/Quotes**: Create and manage invoices/quotes with PDF export
 4. **Monthly Accounting**: Upload bank statements for automated expense tracking

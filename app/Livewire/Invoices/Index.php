@@ -42,6 +42,20 @@ class Index extends Component
         }
     }
 
+    public function deleteInvoice(int $invoiceId)
+    {
+        try {
+            $invoice = Invoice::findOrFail($invoiceId);
+            $invoiceNumber = $invoice->invoice_number;
+
+            $invoice->delete();
+
+            session()->flash('success', "Rechnung {$invoiceNumber} wurde erfolgreich gelöscht.");
+        } catch (\Exception $e) {
+            session()->flash('error', 'Fehler beim Löschen der Rechnung: '.$e->getMessage());
+        }
+    }
+
     public function render()
     {
         $invoices = Invoice::query()

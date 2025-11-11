@@ -48,8 +48,9 @@ class Import extends Component
         foreach ($this->files as $file) {
             try {
                 $filename = $file->getClientOriginalName();
-                $tempPath = $file->store('temp', 'local');
-                $fullPath = storage_path('app/'.$tempPath);
+
+                // Get the real path of the temporary file
+                $fullPath = $file->getRealPath();
 
                 // Parse the document
                 $parsedData = $parser->parseDocument($fullPath);
@@ -69,13 +70,23 @@ class Import extends Component
                     $this->importResults[] = [
                         'filename' => $filename,
                         'status' => 'error',
-                        'message' => 'Document is not a quote',
+                        'message' => 'Dokument ist kein Angebot. Erkannter Typ: '.$parsedData['type'],
                     ];
 
                     continue;
                 }
 
-                // Import the quote
+                // For single file import, redirect to verification
+                if (count($this->files) === 1) {
+                    session()->put('import_data', $parsedData);
+                    session()->put('import_filename', $filename);
+
+                    return redirect()->route('documents.verify-import', [
+                        'type' => 'quote',
+                    ]);
+                }
+
+                // For multiple files, import directly (future enhancement: queue for verification)
                 $importResult = $parser->importDocument($parsedData, 'quote');
 
                 if (isset($importResult['error'])) {
@@ -93,8 +104,7 @@ class Import extends Component
                     ];
                 }
 
-                // Clean up temp file
-                unlink($fullPath);
+                // Livewire automatically cleans up temporary files
 
             } catch (\Exception $e) {
                 Log::error('Quote import error', [
@@ -112,7 +122,10 @@ class Import extends Component
         }
 
         $this->isProcessing = false;
-        session()->flash('success', count($this->files).' Dateien wurden verarbeitet.');
+
+        if (count($this->files) > 1) {
+            session()->flash('success', count($this->files).' Dateien wurden verarbeitet.');
+        }
 
         // Clear files after processing
         $this->files = [];

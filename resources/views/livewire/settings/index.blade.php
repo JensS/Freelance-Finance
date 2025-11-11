@@ -195,6 +195,43 @@
             </div>
         </div>
 
+        <!-- Paperless Integration -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Paperless Integration</h3>
+                <div class="grid grid-cols-1 gap-6">
+                    <!-- Storage Path -->
+                    <div>
+                        <label for="paperless_storage_path" class="block text-sm font-medium text-gray-700">
+                            Storage Path
+                        </label>
+                        <select
+                            wire:model="paperless_storage_path"
+                            id="paperless_storage_path"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        >
+                            <option value="">-- Kein Filter (alle Pfade) --</option>
+                            @foreach($availableStoragePaths as $path)
+                                <option value="{{ $path['id'] }}">{{ $path['name'] }}</option>
+                            @endforeach
+                        </select>
+                        @error('paperless_storage_path')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                        <p class="mt-2 text-sm text-gray-500">
+                            Wählen Sie den Storage Path in Paperless, in dem alle Ihre Dokumente gespeichert werden.
+                            Dieser Filter wird auf alle Paperless-Interaktionen angewendet (Suche, Import, Upload).
+                        </p>
+                        @if(empty($availableStoragePaths))
+                            <p class="mt-2 text-sm text-amber-600">
+                                ⚠️ Keine Storage Paths gefunden. Stellen Sie sicher, dass Paperless korrekt konfiguriert ist.
+                            </p>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Submit Button -->
         <div class="flex justify-end">
             <button

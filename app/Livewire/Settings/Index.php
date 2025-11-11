@@ -37,6 +37,11 @@ class Index extends Component
 
     public string $date_format = 'd.m.Y';
 
+    // Paperless Integration
+    public ?int $paperless_storage_path = null;
+
+    public array $availableStoragePaths = [];
+
     // Current tab
     public string $currentTab = 'company';
 
@@ -44,16 +49,24 @@ class Index extends Component
 
     public function mount()
     {
-
+        $this->loadStoragePaths();
         $this->loadSettings();
+    }
 
+    public function loadStoragePaths()
+    {
+        try {
+            $paperlessService = app(\App\Services\PaperlessService::class);
+            $this->availableStoragePaths = $paperlessService->getStoragePaths();
+        } catch (\Exception $e) {
+            \Log::warning('Failed to load Paperless storage paths', ['error' => $e->getMessage()]);
+            $this->availableStoragePaths = [];
+        }
     }
 
     public function loadSettings()
     {
-
         // Load company information
-
         $this->company_name = Setting::get('company_name', 'Jens Sage');
 
         $address = Setting::get('company_address', ['street' => 'Your Street 1', 'city' => 'Berlin', 'zip' => '10115']);
@@ -65,7 +78,6 @@ class Index extends Component
         $this->zip = $address['zip'] ?? '10115';
 
         // Load bank details
-
         $bankDetails = Setting::get('bank_details', ['iban' => 'DE1234567890', 'bic' => 'BELADEBEXXX']);
 
         $this->iban = $bankDetails['iban'] ?? 'DE1234567890';
@@ -73,7 +85,6 @@ class Index extends Component
         $this->bic = $bankDetails['bic'] ?? 'BELADEBEXXX';
 
         // Load tax information
-
         $this->tax_number = Setting::get('tax_number', '12/345/67890');
 
         $this->eu_vat_id = Setting::get('eu_vat_id', 'DE123456789');
@@ -81,9 +92,10 @@ class Index extends Component
         $this->vat_rate = Setting::get('vat_rate', 19);
 
         // Load formatting
-
         $this->date_format = Setting::get('date_format', 'd.m.Y');
 
+        // Load Paperless integration
+        $this->paperless_storage_path = Setting::get('paperless_storage_path');
     }
 
     public function save()
@@ -134,6 +146,9 @@ class Index extends Component
         // Save formatting
 
         Setting::set('date_format', $this->date_format);
+
+        // Save Paperless integration
+        Setting::set('paperless_storage_path', $this->paperless_storage_path);
 
         $this->success = 'Einstellungen erfolgreich gespeichert!';
 

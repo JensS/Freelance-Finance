@@ -139,7 +139,10 @@ After parsing, users must be able to:
 ### Server Details
 - **URL**: http://128.140.41.24:8000/
 - **API Docs**: https://docs.paperless-ngx.com/api/
-- **Storage Path**: "Selbstständigkeit" (only path needed for this use case)
+- **Storage Path**: Configurable in Settings → Paperless Integration
+  - Default: "Selbstständigkeit"
+  - Automatically filters ALL document operations (search, upload, import) to this path
+  - Can be changed to any storage path defined in your Paperless instance
 
 ### Document Classification
 **Tags**:
@@ -218,9 +221,20 @@ Store in `settings` table as JSON:
   },
   "tax_number": "12/345/67890",
   "eu_vat_id": "DE123456789",
-  "vat_rate": 19
+  "vat_rate": 19,
+  "paperless_storage_path": 123
 }
 ```
+
+### Paperless Storage Path Setting
+- **Location**: Settings → Paperless Integration
+- **Function**: Automatically filters all Paperless interactions to documents within the specified storage path
+- **Applies to**:
+  - Document uploads (invoices, quotes)
+  - Document searches (expense matching, invoice lookup)
+  - Expense document retrieval
+- **How it works**: The system fetches available storage paths from your Paperless instance and displays them in a dropdown
+- **Default behavior**: If no storage path is set, all documents across all paths will be included
 
 ### Environment Variables
 ```bash
