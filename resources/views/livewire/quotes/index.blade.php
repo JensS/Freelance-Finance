@@ -97,13 +97,13 @@
                 @forelse($quotes as $quote)
                     <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-gray-900">{{ $quote->quote_number }}</div>
+                            <div class="text-sm font-medium text-gray-900 max-w-[200px] truncate">{{ $quote->quote_number }}</div>
                             @if($quote->project_name)
-                                <div class="text-xs text-gray-500">{{ $quote->project_name }}</div>
+                                <div class="text-xs text-gray-500 max-w-[200px] truncate">{{ $quote->project_name }}</div>
                             @endif
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">{{ $quote->customer->name }}</div>
+                        <td class="px-6 py-4">
+                            <div class="text-sm text-gray-900 max-w-[250px] truncate">{{ $quote->customer->name }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm text-gray-500">{{ $quote->issue_date ? $quote->issue_date->format($dateFormat) : '' }}</div>

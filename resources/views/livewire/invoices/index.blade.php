@@ -97,13 +97,13 @@
                 @forelse($invoices as $invoice)
                     <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-gray-900">{{ $invoice->invoice_number }}</div>
+                            <div class="text-sm font-medium text-gray-900 max-w-[200px] truncate">{{ $invoice->invoice_number }}</div>
                             @if($invoice->project_name)
-                                <div class="text-xs text-gray-500">{{ $invoice->project_name }}</div>
+                                <div class="text-xs text-gray-500 max-w-[200px] truncate">{{ $invoice->project_name }}</div>
                             @endif
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">{{ $invoice->customer->name }}</div>
+                        <td class="px-6 py-4">
+                            <div class="text-sm text-gray-900 max-w-[250px] truncate">{{ $invoice->customer->name }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm text-gray-500">{{ $invoice->issue_date ? $invoice->issue_date->format($dateFormat) : '' }}</div>
