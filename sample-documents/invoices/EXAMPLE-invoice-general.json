@@ -1,0 +1,32 @@
+{
+  "type": "invoice",
+  "invoice_number": "503",
+  "customer_data": {
+    "name": "Tech Startup GmbH",
+    "email": null,
+    "street": "Torstraße 45",
+    "zip": "10119",
+    "city": "Berlin",
+    "tax_number": null
+  },
+  "issue_date": "2025-08-12",
+  "due_date": "2025-08-26",
+  "service_period_start": null,
+  "service_period_end": null,
+  "service_location": null,
+  "project_name": null,
+  "items": [
+    {
+      "description": "Consulting Services - August 2025",
+      "quantity": 1,
+      "unit_price": 5000.00,
+      "total": 5000.00
+    }
+  ],
+  "subtotal": 5000.00,
+  "vat_rate": 19.0,
+  "vat_amount": 950.00,
+  "total": 5950.00,
+  "notes": "Payment due within 14 days",
+  "is_project_invoice": false
+}

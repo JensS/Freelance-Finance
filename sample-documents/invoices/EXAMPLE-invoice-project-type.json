@@ -1,0 +1,32 @@
+{
+  "type": "invoice",
+  "invoice_number": "492",
+  "customer_data": {
+    "name": "Ageras GmbH",
+    "email": "billing@ageras.com",
+    "street": "Friedrichstraße 123",
+    "zip": "10117",
+    "city": "Berlin",
+    "tax_number": "DE123456789"
+  },
+  "issue_date": "2025-06-04",
+  "due_date": "2025-06-18",
+  "service_period_start": "2025-05-19",
+  "service_period_end": "2025-05-26",
+  "service_location": "Berlin, Deutschland",
+  "project_name": "Sage Video Production",
+  "items": [
+    {
+      "description": "Videoproduktion und Postproduktion",
+      "quantity": 1,
+      "unit_price": 11607.33,
+      "total": 11607.33
+    }
+  ],
+  "subtotal": 11607.33,
+  "vat_rate": 19.0,
+  "vat_amount": 2205.39,
+  "total": 13812.72,
+  "notes": null,
+  "is_project_invoice": true
+}

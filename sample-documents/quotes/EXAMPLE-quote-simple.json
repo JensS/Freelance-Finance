@@ -1,0 +1,28 @@
+{
+  "type": "quote",
+  "quote_number": "Q-2025-001",
+  "customer_data": {
+    "name": "Small Business KG",
+    "email": "info@smallbiz.de",
+    "street": null,
+    "zip": null,
+    "city": null,
+    "tax_number": null
+  },
+  "issue_date": "2025-02-10",
+  "valid_until": "2025-03-10",
+  "project_name": "Website Redesign",
+  "items": [
+    {
+      "description": "Website Design and Development",
+      "quantity": 1,
+      "unit_price": 4500.00,
+      "total": 4500.00
+    }
+  ],
+  "subtotal": 4500.00,
+  "vat_rate": 19.0,
+  "vat_amount": 855.00,
+  "total": 5355.00,
+  "notes": null
+}

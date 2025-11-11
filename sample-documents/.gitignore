@@ -1,0 +1,11 @@
+# Ignore all PDF files (they can be large and contain sensitive data)
+*.pdf
+
+# Keep JSON files (these are the expected test results)
+!*.json
+
+# Keep README files
+!README.md
+
+# Keep EXAMPLE JSON files
+!EXAMPLE-*.json
