@@ -1,0 +1,40 @@
+{
+  "type": "quote",
+  "quote_number": "2025-PC-Sust-Vid-v1",
+  "customer_data": {
+    "name": "Sustainability Corp GmbH",
+    "email": "contact@sustainability-corp.de",
+    "street": "Hauptstraße 1",
+    "zip": "10115",
+    "city": "Berlin",
+    "tax_number": null
+  },
+  "issue_date": "2025-03-15",
+  "valid_until": "2025-04-15",
+  "project_name": "Sustainability Video Production",
+  "items": [
+    {
+      "description": "Concept Development",
+      "quantity": 1,
+      "unit_price": 2500.00,
+      "total": 2500.00
+    },
+    {
+      "description": "Video Production (2 days)",
+      "quantity": 2,
+      "unit_price": 1800.00,
+      "total": 3600.00
+    },
+    {
+      "description": "Post-Production",
+      "quantity": 1,
+      "unit_price": 3000.00,
+      "total": 3000.00
+    }
+  ],
+  "subtotal": 9100.00,
+  "vat_rate": 19.0,
+  "vat_amount": 1729.00,
+  "total": 10829.00,
+  "notes": "Price valid for 30 days"
+}

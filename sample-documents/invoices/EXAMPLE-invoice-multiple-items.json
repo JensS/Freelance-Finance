@@ -1,0 +1,50 @@
+{
+  "type": "invoice",
+  "invoice_number": "504",
+  "customer_data": {
+    "name": "Creative Agency AG",
+    "email": "accounting@creative-agency.de",
+    "street": "Kantstraße 99",
+    "zip": "10623",
+    "city": "Berlin",
+    "tax_number": "DE987654321"
+  },
+  "issue_date": "2025-09-01",
+  "due_date": "2025-09-15",
+  "service_period_start": "2025-08-15",
+  "service_period_end": "2025-08-31",
+  "service_location": "Hamburg, Deutschland",
+  "project_name": "Brand Campaign 2025",
+  "items": [
+    {
+      "description": "Concept Development",
+      "quantity": 1,
+      "unit_price": 2500.00,
+      "total": 2500.00
+    },
+    {
+      "description": "Video Production (3 days)",
+      "quantity": 3,
+      "unit_price": 1800.00,
+      "total": 5400.00
+    },
+    {
+      "description": "Post-Production & Editing",
+      "quantity": 1,
+      "unit_price": 3200.00,
+      "total": 3200.00
+    },
+    {
+      "description": "Motion Graphics",
+      "quantity": 1,
+      "unit_price": 1500.00,
+      "total": 1500.00
+    }
+  ],
+  "subtotal": 12600.00,
+  "vat_rate": 19.0,
+  "vat_amount": 2394.00,
+  "total": 14994.00,
+  "notes": "Includes travel expenses",
+  "is_project_invoice": true
+}

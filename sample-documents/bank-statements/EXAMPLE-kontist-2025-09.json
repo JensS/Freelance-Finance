@@ -1,0 +1,87 @@
+{
+  "bank_type": "solaris",
+  "statement_month": "2025-09",
+  "transactions": [
+    {
+      "date": "2025-09-02",
+      "correspondent": "Ageras GmbH",
+      "title": "Payment for Invoice 492",
+      "description": "SEPA-Überweisung Ageras GmbH - Rechnung 492",
+      "type": "Einkommen 19%",
+      "amount": 13812.72,
+      "currency": "EUR"
+    },
+    {
+      "date": "2025-09-05",
+      "correspondent": "Amazon Web Services",
+      "title": "AWS Cloud Services September",
+      "description": "SEPA-Lastschrift AWS EMEA",
+      "type": "Geschäftsausgabe 19%",
+      "amount": -85.43,
+      "currency": "EUR"
+    },
+    {
+      "date": "2025-09-10",
+      "correspondent": "Google Ireland Ltd",
+      "title": "Google Workspace Subscription",
+      "description": "SEPA-Lastschrift Google Ireland Ltd",
+      "type": "Geschäftsausgabe 0%",
+      "amount": -12.99,
+      "currency": "EUR"
+    },
+    {
+      "date": "2025-09-12",
+      "correspondent": "WeWork",
+      "title": "Coworking Space September",
+      "description": "SEPA-Lastschrift WeWork Germany GmbH",
+      "type": "Geschäftsausgabe 19%",
+      "amount": -350.00,
+      "currency": "EUR"
+    },
+    {
+      "date": "2025-09-15",
+      "correspondent": "Finanzamt Berlin",
+      "title": "Umsatzsteuer Q3 2025",
+      "description": "Überweisung Finanzamt Berlin Mitte/Tiergarten",
+      "type": "Steuerzahlung",
+      "amount": -2500.00,
+      "currency": "EUR"
+    },
+    {
+      "date": "2025-09-18",
+      "correspondent": "Adobe Systems",
+      "title": "Creative Cloud Subscription",
+      "description": "SEPA-Lastschrift Adobe Systems Software Ireland",
+      "type": "Geschäftsausgabe 0%",
+      "amount": -59.99,
+      "currency": "EUR"
+    },
+    {
+      "date": "2025-09-20",
+      "correspondent": "Deutsche Bahn",
+      "title": "Train tickets Hamburg-Berlin",
+      "description": "Kartenzahlung DB Vertrieb GmbH",
+      "type": "Geschäftsausgabe 19%",
+      "amount": -89.50,
+      "currency": "EUR"
+    },
+    {
+      "date": "2025-09-25",
+      "correspondent": "Edeka",
+      "title": "Groceries",
+      "description": "Kartenzahlung EDEKA Berlin",
+      "type": "Privat",
+      "amount": -45.67,
+      "currency": "EUR"
+    },
+    {
+      "date": "2025-09-28",
+      "correspondent": "Tech Startup GmbH",
+      "title": "Payment for Invoice 503",
+      "description": "SEPA-Überweisung Tech Startup GmbH",
+      "type": "Einkommen 19%",
+      "amount": 5950.00,
+      "currency": "EUR"
+    }
+  ]
+}
