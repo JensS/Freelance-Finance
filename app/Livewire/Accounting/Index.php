@@ -155,18 +155,16 @@ class Index extends Component
 
             // Get expense documents from Paperless for the selected month
             $documents = $paperless->getExpenseDocuments([
-                'created_after' => $startDate->format('Y-m-d'),
-                'created_before' => $endDate->format('Y-m-d'),
+                'date_after' => $startDate->format('Y-m-d'),
+                'date_before' => $endDate->format('Y-m-d'),
             ]);
 
-            // Filter out documents already imported (check by paperless_document_id)
-            $importedDocumentIds = BankTransaction::whereNotNull('paperless_document_id')
-                ->whereBetween('transaction_date', [$startDate, $endDate])
-                ->pluck('paperless_document_id')
+            // Filter out documents already imported (check all time, not just selected month)
+            $importedDocumentIds = BankTransaction::whereNotNull('matched_paperless_document_id')
+                ->pluck('matched_paperless_document_id')
                 ->toArray();
 
             $cashReceiptIds = CashReceipt::whereNotNull('paperless_document_id')
-                ->whereBetween('receipt_date', [$startDate, $endDate])
                 ->pluck('paperless_document_id')
                 ->toArray();
 
