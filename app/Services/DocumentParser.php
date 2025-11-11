@@ -219,17 +219,11 @@ class DocumentParser
     {
         $customer = [
             'name' => null,
-            'email' => null,
             'street' => null,
             'city' => null,
             'zip' => null,
             'tax_number' => null,
         ];
-
-        // Extract email
-        if (preg_match('/[\w\.-]+@[\w\.-]+\.\w+/', $text, $matches)) {
-            $customer['email'] = $matches[0];
-        }
 
         // Extract company name (look for patterns like "Rechnung an: [Company Name]")
         $patterns = [
@@ -691,14 +685,6 @@ class DocumentParser
      */
     private function findOrCreateCustomer(array $customerData): Customer
     {
-        // Try to find existing customer by email first
-        if (! empty($customerData['email'])) {
-            $customer = Customer::where('email', $customerData['email'])->first();
-            if ($customer) {
-                return $customer;
-            }
-        }
-
         // Try to find by name
         if (! empty($customerData['name'])) {
             $customer = Customer::where('name', 'like', '%'.$customerData['name'].'%')->first();
@@ -710,12 +696,12 @@ class DocumentParser
         // Create new customer
         return Customer::create([
             'name' => $customerData['name'] ?? 'Unbekannter Kunde',
-            'email' => $customerData['email'],
-            'street' => $customerData['street'],
-            'city' => $customerData['city'],
-            'zip' => $customerData['zip'],
-            'tax_number' => $customerData['tax_number'],
-            'contact_person' => $customerData['name'] ?? null,
+            'address' => [
+                'street' => $customerData['street'] ?? null,
+                'city' => $customerData['city'] ?? null,
+                'zip' => $customerData['zip'] ?? null,
+            ],
+            'tax_id' => $customerData['tax_number'],
         ]);
     }
 

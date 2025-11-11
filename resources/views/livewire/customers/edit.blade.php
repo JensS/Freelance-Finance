@@ -26,38 +26,6 @@
                             <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
-
-                    <!-- Email -->
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700">
-                            E-Mail <span class="text-red-500">*</span>
-                        </label>
-                        <input
-                            wire:model="email"
-                            type="email"
-                            id="email"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                        >
-                        @error('email')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Contact Person -->
-                    <div>
-                        <label for="contact_person" class="block text-sm font-medium text-gray-700">
-                            Ansprechpartner
-                        </label>
-                        <input
-                            wire:model="contact_person"
-                            type="text"
-                            id="contact_person"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                        >
-                        @error('contact_person')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
                 </div>
             </div>
         </div>
