@@ -256,26 +256,38 @@ class Index extends Component
 
                 if ($isCashReceipt) {
                     // Create cash receipt
-                    CashReceipt::create([
+                    $cashReceipt = CashReceipt::create([
                         'receipt_date' => $parsedData['date'] ?? now(),
+                        'correspondent' => $parsedData['correspondent'] ?? '',
                         'description' => $docMeta['title'] ?? 'Imported from Paperless',
                         'amount' => abs($parsedData['total'] ?? 0),
                         'category' => $parsedData['category'] ?? 'Sonstiges',
-                        'notes' => $parsedData['notes'] ?? null,
+                        'note' => $parsedData['notes'] ?? null,
                         'paperless_document_id' => $docId,
                     ]);
+
+                    // Calculate and save net/gross breakdown
+                    $cashReceipt->calculateNetGross();
+                    $cashReceipt->save();
                 } else {
                     // Create bank transaction (expense)
-                    BankTransaction::create([
+                    $transaction = BankTransaction::create([
                         'transaction_date' => $parsedData['date'] ?? now(),
+                        'correspondent' => $parsedData['correspondent'] ?? '',
+                        'title' => $docMeta['title'] ?? '',
                         'description' => $docMeta['title'] ?? 'Imported from Paperless',
+                        'type' => $parsedData['type'] ?? 'Geschäftsausgabe 19%',
                         'amount' => -abs($parsedData['total'] ?? 0), // Negative for expenses
                         'category' => $parsedData['category'] ?? 'Sonstiges',
-                        'notes' => $parsedData['notes'] ?? null,
+                        'note' => $parsedData['notes'] ?? null,
                         'is_validated' => false,
                         'is_business_expense' => true,
-                        'paperless_document_id' => $docId,
+                        'matched_paperless_document_id' => $docId,
                     ]);
+
+                    // Calculate and save net/gross breakdown
+                    $transaction->calculateNetGross();
+                    $transaction->save();
                 }
 
                 $imported++;

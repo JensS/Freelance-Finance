@@ -160,15 +160,22 @@ class BankStatementParser
                     }
                 }
 
-                BankTransaction::create([
+                $transaction = BankTransaction::create([
                     'transaction_date' => $transactionData['date'],
+                    'correspondent' => $transactionData['correspondent'] ?? '',
+                    'title' => $transactionData['title'] ?? '',
                     'description' => $transactionData['description'],
+                    'type' => $transactionData['type'] ?? 'Nicht kategorisiert',
                     'amount' => $transactionData['amount'],
                     'currency' => $transactionData['currency'] ?? 'EUR',
                     'category' => $this->guessCategory($transactionData),
                     'is_business_expense' => $this->isBusinessExpense($transactionData),
                     'raw_data' => $transactionData['raw_data'] ?? null,
                 ]);
+
+                // Calculate and save net/gross breakdown
+                $transaction->calculateNetGross();
+                $transaction->save();
 
                 $imported++;
 
