@@ -97,7 +97,50 @@ class Index extends Component
     public function updateNote(int $transactionId, string $note)
     {
         $transaction = BankTransaction::findOrFail($transactionId);
-        $transaction->update(['notes' => $note ?: null]);
+        $transaction->update(['note' => $note ?: null]);
+
+        session()->flash('success', 'Notiz aktualisiert.');
+    }
+
+    public function updateTransaction(int $transactionId, array $data)
+    {
+        $transaction = BankTransaction::findOrFail($transactionId);
+
+        $validated = [];
+
+        if (isset($data['amount'])) {
+            $validated['amount'] = (float) $data['amount'];
+        }
+
+        if (isset($data['description'])) {
+            $validated['description'] = $data['description'];
+        }
+
+        if (isset($data['correspondent'])) {
+            $validated['correspondent'] = $data['correspondent'];
+        }
+
+        if (isset($data['note'])) {
+            $validated['note'] = $data['note'] ?: null;
+        }
+
+        $transaction->update($validated);
+
+        // Recalculate net/gross if amount changed
+        if (isset($data['amount'])) {
+            $transaction->calculateNetGross();
+            $transaction->save();
+        }
+
+        session()->flash('success', 'Transaktion aktualisiert.');
+    }
+
+    public function deleteTransaction(int $transactionId)
+    {
+        $transaction = BankTransaction::findOrFail($transactionId);
+        $transaction->delete();
+
+        session()->flash('success', 'Transaktion gelöscht.');
     }
 
     public function findMatches(int $transactionId)

@@ -240,6 +240,36 @@ class PaperlessService
     }
 
     /**
+     * Get document thumbnail URL from Paperless
+     *
+     * @param  int  $documentId  Document ID in Paperless
+     * @return string|null Thumbnail URL or null if not available
+     */
+    public function getDocumentThumbnailUrl(int $documentId): ?string
+    {
+        if (empty($this->baseUrl)) {
+            return null;
+        }
+
+        return $this->baseUrl.'/api/documents/'.$documentId.'/thumb/';
+    }
+
+    /**
+     * Get document preview URL from Paperless
+     *
+     * @param  int  $documentId  Document ID in Paperless
+     * @return string|null Preview URL or null if not available
+     */
+    public function getDocumentPreviewUrl(int $documentId): ?string
+    {
+        if (empty($this->baseUrl)) {
+            return null;
+        }
+
+        return $this->baseUrl.'/api/documents/'.$documentId.'/preview/';
+    }
+
+    /**
      * Update document metadata in Paperless
      *
      * @param  int  $documentId  Document ID in Paperless

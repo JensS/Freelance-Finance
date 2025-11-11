@@ -72,6 +72,12 @@ Route::middleware(['auth.simple'])->group(function () {
         Route::get('/', AccountingIndex::class)->name('index');
     });
 
+    // Paperless proxy routes (for authenticated thumbnail/preview requests)
+    Route::prefix('paperless')->name('paperless.')->group(function () {
+        Route::get('/documents/{documentId}/thumbnail', [\App\Http\Controllers\PaperlessProxyController::class, 'thumbnail'])->name('thumbnail');
+        Route::get('/documents/{documentId}/preview', [\App\Http\Controllers\PaperlessProxyController::class, 'preview'])->name('preview');
+    });
+
     // Reports
     Route::prefix('reports')->name('reports.')->group(function () {
         Route::get('/', ReportsIndex::class)->name('index');
