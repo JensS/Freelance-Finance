@@ -64,6 +64,20 @@ class Index extends Component
         }
     }
 
+    public function deleteQuote(int $quoteId)
+    {
+        try {
+            $quote = Quote::findOrFail($quoteId);
+            $quoteNumber = $quote->quote_number;
+
+            $quote->delete();
+
+            session()->flash('success', "Angebot {$quoteNumber} wurde erfolgreich gelöscht.");
+        } catch (\Exception $e) {
+            session()->flash('error', 'Fehler beim Löschen des Angebots: '.$e->getMessage());
+        }
+    }
+
     public function render()
     {
         $quotes = Quote::with('customer')
