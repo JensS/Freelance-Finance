@@ -44,9 +44,7 @@ class Index extends Component
     {
         $customers = Customer::query()
             ->when($this->search, function ($query) {
-                $query->where('name', 'like', '%'.$this->search.'%')
-                    ->orWhere('email', 'like', '%'.$this->search.'%')
-                    ->orWhere('contact_person', 'like', '%'.$this->search.'%');
+                $query->where('name', 'like', '%'.$this->search.'%');
             })
             ->orderBy('name')
             ->paginate(15);
