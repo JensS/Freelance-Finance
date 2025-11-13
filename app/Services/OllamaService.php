@@ -13,8 +13,9 @@ class OllamaService
 
     public function __construct()
     {
-        $this->baseUrl = rtrim(config('services.ollama.url'), '/');
-        $this->model = config('services.ollama.model');
+        // Try to get from database settings first, fall back to .env
+        $this->baseUrl = rtrim(\App\Models\Setting::get('ollama_url', config('services.ollama.url', 'http://localhost:11434')), '/');
+        $this->model = \App\Models\Setting::get('ollama_model', config('services.ollama.model', 'llama3.2'));
     }
 
     /**
@@ -223,6 +224,135 @@ PROMPT;
             Log::error('Ollama connection test failed', ['error' => $e->getMessage()]);
 
             return false;
+        }
+    }
+
+    /**
+     * Get list of available models from Ollama
+     *
+     * @return array Array of models with name and type
+     */
+    public function getAvailableModels(): array
+    {
+        try {
+            $response = Http::timeout(10)->get($this->baseUrl.'/api/tags');
+
+            if (! $response->successful()) {
+                Log::error('Failed to fetch Ollama models', [
+                    'status' => $response->status(),
+                ]);
+
+                return [];
+            }
+
+            $data = $response->json();
+            $models = $data['models'] ?? [];
+
+            $result = [
+                'text' => [],
+                'vision' => [],
+            ];
+
+            foreach ($models as $model) {
+                $modelName = $model['name'] ?? null;
+
+                if (! $modelName) {
+                    continue;
+                }
+
+                $modelData = [
+                    'name' => $modelName,
+                    'size' => $model['size'] ?? null,
+                    'modified' => $model['modified_at'] ?? null,
+                ];
+
+                // Categorize models by type - check for vision model indicators
+                $lowerName = strtolower($modelName);
+
+                // Vision model patterns
+                $visionPatterns = [
+                    'vision',      // llama3.2-vision, granite-3.2-vision
+                    'llava',       // llava, llava-phi3
+                    'minicpm',     // minicpm-v
+                    'qwen-vl',     // qwen-vl, qwen2-vl
+                    'qwen2-vl',    // qwen2-vl variants
+                    'granite-vision', // granite vision variants
+                    'bakllava',    // bakllava
+                    'obsidian',    // obsidian (vision model)
+                ];
+
+                $isVisionModel = false;
+                foreach ($visionPatterns as $pattern) {
+                    if (str_contains($lowerName, $pattern)) {
+                        $isVisionModel = true;
+                        break;
+                    }
+                }
+
+                if ($isVisionModel) {
+                    $result['vision'][] = $modelData;
+                } else {
+                    $result['text'][] = $modelData;
+                }
+            }
+
+            return $result;
+
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch Ollama models', ['error' => $e->getMessage()]);
+
+            return ['text' => [], 'vision' => []];
+        }
+    }
+
+    /**
+     * Install (pull) a model from Ollama
+     *
+     * @param  string  $modelName  Name of the model to install
+     * @return array Status information
+     */
+    public function installModel(string $modelName): array
+    {
+        try {
+            // Trigger the model pull - this is a streaming endpoint that downloads in background
+            // We just need to verify the request was accepted
+            $response = Http::timeout(10)->post($this->baseUrl.'/api/pull', [
+                'name' => $modelName,
+            ]);
+
+            if (! $response->successful()) {
+                $statusCode = $response->status();
+                $body = $response->body();
+
+                Log::error('Model installation request failed', [
+                    'model' => $modelName,
+                    'status' => $statusCode,
+                    'response' => $body,
+                ]);
+
+                return [
+                    'success' => false,
+                    'error' => "Failed to start model installation (HTTP {$statusCode}). Check Ollama logs.",
+                ];
+            }
+
+            // Request accepted - model is now downloading in the background
+            return [
+                'success' => true,
+                'status' => 'downloading',
+                'message' => "Model {$modelName} installation started successfully",
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Model installation failed', [
+                'model' => $modelName,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
         }
     }
 }

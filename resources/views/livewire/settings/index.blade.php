@@ -28,6 +28,13 @@
             >
                 Branding
             </button>
+            <button
+                @click="activeTab = 'integrations'"
+                :class="activeTab === 'integrations' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'"
+                class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+            >
+                Integrationen
+            </button>
         </nav>
     </div>
 
@@ -195,43 +202,6 @@
             </div>
         </div>
 
-        <!-- Paperless Integration -->
-        <div class="bg-white shadow rounded-lg">
-            <div class="px-4 py-5 sm:p-6">
-                <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Paperless Integration</h3>
-                <div class="grid grid-cols-1 gap-6">
-                    <!-- Storage Path -->
-                    <div>
-                        <label for="paperless_storage_path" class="block text-sm font-medium text-gray-700">
-                            Storage Path
-                        </label>
-                        <select
-                            wire:model="paperless_storage_path"
-                            id="paperless_storage_path"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                        >
-                            <option value="">-- Kein Filter (alle Pfade) --</option>
-                            @foreach($availableStoragePaths as $path)
-                                <option value="{{ $path['id'] }}">{{ $path['name'] }}</option>
-                            @endforeach
-                        </select>
-                        @error('paperless_storage_path')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                        <p class="mt-2 text-sm text-gray-500">
-                            Wählen Sie den Storage Path in Paperless, in dem alle Ihre Dokumente gespeichert werden.
-                            Dieser Filter wird auf alle Paperless-Interaktionen angewendet (Suche, Import, Upload).
-                        </p>
-                        @if(empty($availableStoragePaths))
-                            <p class="mt-2 text-sm text-amber-600">
-                                ⚠️ Keine Storage Paths gefunden. Stellen Sie sicher, dass Paperless korrekt konfiguriert ist.
-                            </p>
-                        @endif
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Submit Button -->
         <div class="flex justify-end">
             <button
@@ -324,5 +294,472 @@
     <!-- Branding Tab Content -->
     <div x-show="activeTab === 'branding'" x-cloak>
         @livewire('settings.branding-settings')
+    </div>
+
+    <!-- Integrations Tab Content -->
+    <div x-show="activeTab === 'integrations'" x-cloak>
+        <form wire:submit="save" class="space-y-6">
+            <!-- Paperless Integration -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Paperless Integration</h3>
+                    <div class="grid grid-cols-1 gap-6">
+                        <!-- Paperless URL -->
+                        <div>
+                            <label for="paperless_url" class="block text-sm font-medium text-gray-700">
+                                Paperless URL
+                            </label>
+                            <input
+                                wire:model="paperless_url"
+                                type="url"
+                                id="paperless_url"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                placeholder="http://128.140.41.24:8000/"
+                            >
+                            @error('paperless_url')
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            <p class="mt-2 text-sm text-gray-500">
+                                Die URL Ihrer Paperless-NGX Installation.
+                            </p>
+                        </div>
+
+                        <!-- Paperless API Token -->
+                        <div>
+                            <label for="paperless_api_token" class="block text-sm font-medium text-gray-700">
+                                API Token
+                            </label>
+                            <input
+                                wire:model="paperless_api_token"
+                                type="password"
+                                id="paperless_api_token"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm font-mono"
+                                placeholder="••••••••••••••••"
+                            >
+                            @error('paperless_api_token')
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            <p class="mt-2 text-sm text-gray-500">
+                                Ihr Paperless API Token. Zu finden in Paperless unter Einstellungen → API Tokens.
+                            </p>
+                        </div>
+
+                        <!-- Storage Path -->
+                        <div>
+                            <label for="paperless_storage_path" class="block text-sm font-medium text-gray-700">
+                                Storage Path
+                            </label>
+                            <select
+                                wire:model="paperless_storage_path"
+                                id="paperless_storage_path"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            >
+                                <option value="">-- Kein Filter (alle Pfade) --</option>
+                                @foreach($availableStoragePaths as $path)
+                                    <option value="{{ $path['id'] }}">{{ $path['name'] }}</option>
+                                @endforeach
+                            </select>
+                            @error('paperless_storage_path')
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            <p class="mt-2 text-sm text-gray-500">
+                                Wählen Sie den Storage Path in Paperless, in dem alle Ihre Dokumente gespeichert werden.
+                                Dieser Filter wird auf alle Paperless-Interaktionen angewendet (Suche, Import, Upload).
+                            </p>
+                            @if(empty($availableStoragePaths))
+                                <p class="mt-2 text-sm text-amber-600">
+                                    ⚠️ Keine Storage Paths gefunden. Stellen Sie sicher, dass Paperless korrekt konfiguriert ist.
+                                </p>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Provider Configuration -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">AI Provider Konfiguration</h3>
+                    <p class="text-sm text-gray-500 mb-6">
+                        Wählen Sie Ihren primären AI-Provider für Dokumentenerkennung. Bei Bedarf können Sie einen Fallback-Provider konfigurieren.
+                    </p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Primary Provider -->
+                        <div>
+                            <label for="ai_provider" class="block text-sm font-medium text-gray-700">
+                                Primärer AI-Provider
+                            </label>
+                            <select
+                                wire:model="ai_provider"
+                                id="ai_provider"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            >
+                                <option value="ollama">Ollama (lokal)</option>
+                                <option value="openai">OpenAI</option>
+                                <option value="anthropic">Anthropic (Claude)</option>
+                                <option value="openrouter">OpenRouter</option>
+                            </select>
+                            @error('ai_provider')
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Fallback Provider -->
+                        <div>
+                            <label for="ai_fallback_provider" class="block text-sm font-medium text-gray-700">
+                                Fallback-Provider
+                            </label>
+                            <select
+                                wire:model="ai_fallback_provider"
+                                id="ai_fallback_provider"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            >
+                                <option value="none">Kein Fallback</option>
+                                <option value="openai">OpenAI</option>
+                                <option value="anthropic">Anthropic (Claude)</option>
+                                <option value="openrouter">OpenRouter</option>
+                            </select>
+                            @error('ai_fallback_provider')
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            <p class="mt-2 text-sm text-gray-500">
+                                Wird verwendet, wenn der primäre Provider fehlschlägt.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OpenAI Configuration -->
+            <div class="bg-white shadow rounded-lg" x-show="$wire.ai_provider === 'openai' || $wire.ai_fallback_provider === 'openai'">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">OpenAI Konfiguration</h3>
+
+                    <div class="grid grid-cols-1 gap-6">
+                        <!-- OpenAI API Key -->
+                        <div>
+                            <label for="openai_api_key" class="block text-sm font-medium text-gray-700">
+                                OpenAI API Key
+                            </label>
+                            <input
+                                wire:model="openai_api_key"
+                                type="password"
+                                id="openai_api_key"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                placeholder="sk-..."
+                            >
+                            @error('openai_api_key')
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            <p class="mt-2 text-sm text-gray-500">
+                                Ihr OpenAI API-Schlüssel. Erhältlich unter <a href="https://platform.openai.com/api-keys" target="_blank" class="text-indigo-600 hover:text-indigo-500">platform.openai.com</a>.
+                            </p>
+                        </div>
+
+                        <!-- OpenAI Model -->
+                        <div>
+                            <label for="openai_model" class="block text-sm font-medium text-gray-700">
+                                OpenAI Model
+                            </label>
+                            <select
+                                wire:model="openai_model"
+                                id="openai_model"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            >
+                                <option value="gpt-4o">GPT-4o (empfohlen)</option>
+                                <option value="gpt-4o-mini">GPT-4o mini (günstiger)</option>
+                                <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                            </select>
+                            @error('openai_model')
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            <p class="mt-2 text-sm text-gray-500">
+                                Das zu verwendende OpenAI-Modell. GPT-4o bietet die beste Qualität für Dokumentenerkennung.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Anthropic Configuration -->
+            <div class="bg-white shadow rounded-lg" x-show="$wire.ai_provider === 'anthropic' || $wire.ai_fallback_provider === 'anthropic'">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Anthropic (Claude) Konfiguration</h3>
+
+                    <div class="grid grid-cols-1 gap-6">
+                        <!-- Anthropic API Key -->
+                        <div>
+                            <label for="anthropic_api_key" class="block text-sm font-medium text-gray-700">
+                                Anthropic API Key
+                            </label>
+                            <input
+                                wire:model="anthropic_api_key"
+                                type="password"
+                                id="anthropic_api_key"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                placeholder="sk-ant-..."
+                            >
+                            @error('anthropic_api_key')
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            <p class="mt-2 text-sm text-gray-500">
+                                Ihr Anthropic API-Schlüssel. Erhältlich unter <a href="https://console.anthropic.com/" target="_blank" class="text-indigo-600 hover:text-indigo-500">console.anthropic.com</a>.
+                            </p>
+                        </div>
+
+                        <!-- Anthropic Model -->
+                        <div>
+                            <label for="anthropic_model" class="block text-sm font-medium text-gray-700">
+                                Anthropic Model
+                            </label>
+                            <select
+                                wire:model="anthropic_model"
+                                id="anthropic_model"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            >
+                                <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet (empfohlen)</option>
+                                <option value="claude-3-opus-20240229">Claude 3 Opus (höchste Qualität)</option>
+                                <option value="claude-3-haiku-20240307">Claude 3 Haiku (schnell & günstig)</option>
+                            </select>
+                            @error('anthropic_model')
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            <p class="mt-2 text-sm text-gray-500">
+                                Das zu verwendende Claude-Modell. Sonnet bietet das beste Preis-Leistungs-Verhältnis.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OpenRouter Configuration -->
+            <div class="bg-white shadow rounded-lg" x-show="$wire.ai_provider === 'openrouter' || $wire.ai_fallback_provider === 'openrouter'">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">OpenRouter Konfiguration</h3>
+
+                    <div class="grid grid-cols-1 gap-6">
+                        <!-- OpenRouter API Key -->
+                        <div>
+                            <label for="openrouter_api_key" class="block text-sm font-medium text-gray-700">
+                                OpenRouter API Key
+                            </label>
+                            <input
+                                wire:model="openrouter_api_key"
+                                type="password"
+                                id="openrouter_api_key"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                placeholder="sk-or-..."
+                            >
+                            @error('openrouter_api_key')
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            <p class="mt-2 text-sm text-gray-500">
+                                Ihr OpenRouter API-Schlüssel. Erhältlich unter <a href="https://openrouter.ai/keys" target="_blank" class="text-indigo-600 hover:text-indigo-500">openrouter.ai/keys</a>.
+                            </p>
+                        </div>
+
+                        <!-- OpenRouter Model -->
+                        <div>
+                            <label for="openrouter_model" class="block text-sm font-medium text-gray-700">
+                                OpenRouter Model
+                            </label>
+                            <input
+                                wire:model="openrouter_model"
+                                type="text"
+                                id="openrouter_model"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                placeholder="anthropic/claude-3.5-sonnet"
+                            >
+                            @error('openrouter_model')
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            <p class="mt-2 text-sm text-gray-500">
+                                Das zu verwendende Modell (z.B. anthropic/claude-3.5-sonnet, openai/gpt-4o). Siehe <a href="https://openrouter.ai/models" target="_blank" class="text-indigo-600 hover:text-indigo-500">Modelliste</a>.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ollama Integration -->
+            <div class="bg-white shadow rounded-lg" x-show="$wire.ai_provider === 'ollama'">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-medium leading-6 text-gray-900">Ollama AI Integration (Lokal)</h3>
+                        <button
+                            type="button"
+                            wire:click="refreshOllamaModels"
+                            class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        >
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Modelle aktualisieren
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-6">
+                        <!-- Ollama URL -->
+                        <div>
+                            <label for="ollama_url" class="block text-sm font-medium text-gray-700">
+                                Ollama API URL
+                            </label>
+                            <input
+                                wire:model="ollama_url"
+                                type="url"
+                                id="ollama_url"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                placeholder="http://jens.pc.local:11434"
+                            >
+                            @error('ollama_url')
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            <p class="mt-2 text-sm text-gray-500">
+                                Die URL Ihrer Ollama Installation (z.B. http://localhost:11434).
+                            </p>
+                        </div>
+
+                        <!-- Ollama Model (Text) -->
+                        <div>
+                            <label for="ollama_model" class="block text-sm font-medium text-gray-700">
+                                AI Model (Text)
+                            </label>
+                            <select
+                                wire:model="ollama_model"
+                                id="ollama_model"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            >
+                                <option value="">-- Bitte wählen --</option>
+                                @forelse($availableTextModels as $model)
+                                    <option value="{{ $model['name'] }}">
+                                        {{ $model['name'] }}
+                                        @if(isset($model['size']))
+                                            ({{ number_format($model['size'] / 1073741824, 1) }} GB)
+                                        @endif
+                                    </option>
+                                @empty
+                                    <option value="" disabled>Keine Text-Modelle verfügbar</option>
+                                @endforelse
+                            </select>
+                            @error('ollama_model')
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+
+                            @if(empty($availableTextModels))
+                                <div class="mt-3">
+                                    <button
+                                        type="button"
+                                        wire:click="installRecommendedTextModel"
+                                        wire:loading.attr="disabled"
+                                        wire:target="installRecommendedTextModel"
+                                        style="background: linear-gradient(to right, #059669, #10b981);"
+                                        class="w-full inline-flex justify-center items-center px-4 py-2 border-0 rounded-md shadow-sm text-sm font-medium text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <svg wire:loading.remove wire:target="installRecommendedTextModel" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                                        </svg>
+                                        <svg wire:loading wire:target="installRecommendedTextModel" class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        <span wire:loading.remove wire:target="installRecommendedTextModel">
+                                            Empfehlung installieren: gpt-oss:20b
+                                        </span>
+                                        <span wire:loading wire:target="installRecommendedTextModel">
+                                            Installiere gpt-oss:20b...
+                                        </span>
+                                    </button>
+                                    <p class="mt-2 text-xs text-gray-500">
+                                        Installiert das empfohlene Text-Modell (ca. 11 GB). Dies kann 5-15 Minuten dauern.
+                                    </p>
+                                </div>
+                            @else
+                                <p class="mt-2 text-sm text-gray-500">
+                                    Das zu verwendende Ollama Modell für Textanalyse.
+                                </p>
+                            @endif
+                        </div>
+
+                        <!-- Ollama Vision Model -->
+                        <div>
+                            <label for="ollama_vision_model" class="block text-sm font-medium text-gray-700">
+                                AI Model (Vision)
+                            </label>
+                            <select
+                                wire:model="ollama_vision_model"
+                                id="ollama_vision_model"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            >
+                                <option value="">-- Bitte wählen --</option>
+                                @forelse($availableVisionModels as $model)
+                                    <option value="{{ $model['name'] }}">
+                                        {{ $model['name'] }}
+                                        @if(isset($model['size']))
+                                            ({{ number_format($model['size'] / 1073741824, 1) }} GB)
+                                        @endif
+                                    </option>
+                                @empty
+                                    <option value="" disabled>Keine Vision-Modelle verfügbar</option>
+                                @endforelse
+                            </select>
+                            @error('ollama_vision_model')
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+
+                            @if(empty($availableVisionModels))
+                                <div class="mt-3">
+                                    <button
+                                        type="button"
+                                        wire:click="installRecommendedVisionModel"
+                                        wire:loading.attr="disabled"
+                                        wire:target="installRecommendedVisionModel"
+                                        style="background: linear-gradient(to right, #2563eb, #4f46e5);"
+                                        class="w-full inline-flex justify-center items-center px-4 py-2 border-0 rounded-md shadow-sm text-sm font-medium text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <svg wire:loading.remove wire:target="installRecommendedVisionModel" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                                        </svg>
+                                        <svg wire:loading wire:target="installRecommendedVisionModel" class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        <span wire:loading.remove wire:target="installRecommendedVisionModel">
+                                            Empfehlung installieren: granite-3.2-vision
+                                        </span>
+                                        <span wire:loading wire:target="installRecommendedVisionModel">
+                                            Installiere granite-3.2-vision...
+                                        </span>
+                                    </button>
+                                    <p class="mt-2 text-xs text-gray-500">
+                                        Installiert das empfohlene Vision-Modell für OCR und Dokumentenerkennung (ca. 2 GB). Dies kann 2-10 Minuten dauern.
+                                    </p>
+                                    <p class="mt-2 text-xs text-gray-400">
+                                        <strong>Weitere Optionen:</strong><br>
+                                        • <code>ollama pull llama3.2-vision</code> - Meta's Vision-Modell (7.9 GB)<br>
+                                        • <code>ollama pull llava</code> - Beliebtes Vision-Modell (4.5 GB)<br>
+                                        • <code>ollama pull qwen2-vl</code> - Starke visuelle Analyse (4-8 GB)
+                                    </p>
+                                </div>
+                            @else
+                                <p class="mt-2 text-sm text-gray-500">
+                                    Das zu verwendende Vision-Modell für PDF-Analyse und Belegerkennung.
+                                </p>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex justify-end">
+                <button
+                    type="submit"
+                    class="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                >
+                    Einstellungen speichern
+                </button>
+            </div>
+        </form>
     </div>
 </div>

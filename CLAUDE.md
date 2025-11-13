@@ -15,7 +15,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Styling**: Tailwind CSS 4.0
 - **PDF Generation**: barryvdh/laravel-dompdf (with custom font support)
 - **PDF Parsing**: smalot/pdfparser (for bank statement text extraction)
-- **AI Integration**: Ollama API at http://jens.pc.local:11434 (configurable via .env)
+- **AI Integration**: Ollama API (configurable via Settings UI or .env)
+  - **Text Models**: gpt-oss, llama3.2, mistral, codellama
+  - **Vision Models**: llama3.2-vision, llava, qwen2-vl, granite-3.2-vision
 - **Queue**: Database queue (Redis optional)
 
 ## Development Commands
@@ -237,14 +239,17 @@ Store in `settings` table as JSON:
 - **Default behavior**: If no storage path is set, all documents across all paths will be included
 
 ### Environment Variables
+
+**Note**: Paperless and Ollama settings are now configurable via Settings UI and stored in database. Environment variables below serve as defaults only.
+
 ```bash
 # Authentication
 APP_PASSWORD=your_simple_password
 
-# Ollama AI
+# Ollama AI (configurable via Settings → Integrationen)
 OLLAMA_API_URL=http://jens.pc.local:11434
 
-# Paperless
+# Paperless (configurable via Settings → Integrationen)
 PAPERLESS_URL=http://128.140.41.24:8000/
 PAPERLESS_API_TOKEN=your_token_here
 
@@ -295,6 +300,55 @@ Provide:
 3. Specific actionable recommendations for improvement
 4. Budget suggestions for next month
 ```
+
+## AI Vision Models for Receipt Extraction
+
+The system uses Ollama vision models to automatically extract data from PDF receipts during transaction verification.
+
+### Supported Vision Models
+
+**Recommended Models:**
+1. **LLaVA** (`llava`)
+   - Popular, high-performance vision model
+   - Good for general-purpose visual and language understanding
+   - Install: `ollama pull llava`
+
+2. **Llama 3.2-Vision** (`llama3.2-vision`)
+   - Meta's latest vision capabilities
+   - Optimized for image reasoning and captioning
+   - Install: `ollama pull llama3.2-vision`
+
+3. **Qwen-VL** (`qwen2-vl`)
+   - Powerful vision-language model from Qwen family
+   - Strong visual reasoning capabilities
+   - Install: `ollama pull qwen2-vl`
+
+4. **Granite-3.2-Vision** (`granite-3.2-vision`)
+   - Excellent for OCR and document interpretation
+   - Lower RAM requirements
+   - Install: `ollama pull granite-3.2-vision`
+
+5. **MiniCPM-V** (`minicpm-v`)
+   - Compact model with good performance
+   - Runs efficiently on single GPU
+   - Install: `ollama pull minicpm-v`
+
+### Configuration
+
+Models are selected via **Settings → Integrationen → Ollama AI Integration**:
+- Text Model: For financial analysis and recommendations
+- Vision Model: For automatic receipt data extraction
+
+The system automatically categorizes installed models into text and vision types based on model name patterns.
+
+### Extraction Process
+
+1. User clicks "AI-Extraktion" button on verification page
+2. System downloads PDF from Paperless
+3. Converts first page to high-quality image (200 DPI)
+4. Sends to Ollama with structured JSON prompt
+5. Extracts: date, merchant, amounts (gross/net/VAT), description, transaction type
+6. Populates form fields for user review
 
 ## Authentication
 

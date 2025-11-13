@@ -94,6 +94,25 @@ class BankTransaction extends Model
     }
 
     /**
+     * Get available transaction types for the verification form
+     */
+    public static function getTransactionTypes(): array
+    {
+        return [
+            'Privat' => 'Privat (nicht berücksichtigt)',
+            'Geschäftsausgabe 0%' => 'Geschäftsausgabe 0% (international)',
+            'Geschäftsausgabe 7%' => 'Geschäftsausgabe 7% MwSt',
+            'Geschäftsausgabe 19%' => 'Geschäftsausgabe 19% MwSt',
+            'Bewirtung' => 'Bewirtung (Geschäftsessen)',
+            'Reverse Charge' => 'Reverse Charge (EU B2B)',
+            'Einkommen 19%' => 'Einkommen 19% MwSt',
+            'Umsatzsteuerstattung' => 'Umsatzsteuererstattung',
+            'Steuerzahlung' => 'Steuerzahlung',
+            'Nicht kategorisiert' => 'Nicht kategorisiert',
+        ];
+    }
+
+    /**
      * Check if transaction is income
      */
     public function isIncome(): bool

@@ -15,6 +15,7 @@ use App\Livewire\Quotes\Edit as QuotesEdit;
 use App\Livewire\Quotes\Index as QuotesIndex;
 use App\Livewire\Reports\Index as ReportsIndex;
 use App\Livewire\Settings\Index as SettingsIndex;
+use App\Livewire\Transactions\VerifyImports;
 use Illuminate\Support\Facades\Route;
 
 // Redirect root to dashboard
@@ -70,6 +71,11 @@ Route::middleware(['auth.simple'])->group(function () {
     // Accounting
     Route::prefix('accounting')->name('accounting.')->group(function () {
         Route::get('/', AccountingIndex::class)->name('index');
+    });
+
+    // Transactions
+    Route::prefix('transactions')->name('transactions.')->group(function () {
+        Route::get('/verify-imports', VerifyImports::class)->name('verify-imports');
     });
 
     // Paperless proxy routes (for authenticated thumbnail/preview requests)

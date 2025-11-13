@@ -13,8 +13,9 @@ class PaperlessService
 
     public function __construct()
     {
-        $this->baseUrl = rtrim(config('services.paperless.url'), '/');
-        $this->apiToken = config('services.paperless.token');
+        // Try to get from database settings first, fall back to .env
+        $this->baseUrl = rtrim(\App\Models\Setting::get('paperless_url', config('services.paperless.url', '')), '/');
+        $this->apiToken = \App\Models\Setting::get('paperless_api_token', config('services.paperless.token', ''));
     }
 
     /**

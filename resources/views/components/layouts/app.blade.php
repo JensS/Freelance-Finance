@@ -50,6 +50,18 @@
                                class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('accounting.*') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium">
                                 Buchhaltung
                             </a>
+                            <a href="{{ route('transactions.verify-imports') }}"
+                               class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('transactions.*') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium">
+                                Überprüfung
+                                @php
+                                    $unvalidatedCount = \App\Models\BankTransaction::where('is_validated', false)->count();
+                                @endphp
+                                @if($unvalidatedCount > 0)
+                                    <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        {{ $unvalidatedCount }}
+                                    </span>
+                                @endif
+                            </a>
                             <a href="{{ route('reports.index') }}"
                                class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('reports.*') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium">
                                 Berichte

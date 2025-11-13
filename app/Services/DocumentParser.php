@@ -27,6 +27,17 @@ class DocumentParser
     public function parseDocument(string $filePath): array
     {
         try {
+            // First, try AI vision extraction (more accurate for invoices/quotes)
+            $aiResult = $this->parseWithAIVision($filePath);
+            if ($aiResult && ! isset($aiResult['error'])) {
+                Log::info('Successfully parsed document with AI vision', ['file' => $filePath]);
+
+                return $aiResult;
+            }
+
+            // Fall back to text-based parsing
+            Log::info('Falling back to text-based parsing', ['file' => $filePath]);
+
             $pdf = $this->parser->parseFile($filePath);
             $text = $pdf->getText();
 
@@ -50,6 +61,207 @@ class DocumentParser
 
             return ['error' => 'Failed to parse PDF: '.$e->getMessage()];
         }
+    }
+
+    /**
+     * Parse document using AI vision
+     *
+     * @param  string  $filePath  Path to the PDF file
+     * @return array|null Parsed data or null if vision extraction not available/failed
+     */
+    private function parseWithAIVision(string $filePath): ?array
+    {
+        try {
+            $visionService = app(AIVisionService::class);
+
+            // First, detect document type by trying to extract as both invoice and quote
+            // Try invoice first (more common)
+            $invoiceData = $visionService->extractInvoiceData($filePath);
+
+            if ($invoiceData && isset($invoiceData['invoice_number']) && $invoiceData['invoice_number']) {
+                // Successfully extracted as invoice
+                return $this->normalizeAIInvoiceData($invoiceData);
+            }
+
+            // Try as quote
+            $quoteData = $visionService->extractQuoteData($filePath);
+
+            if ($quoteData && isset($quoteData['quote_number']) && $quoteData['quote_number']) {
+                // Successfully extracted as quote
+                return $this->normalizeAIQuoteData($quoteData);
+            }
+
+            Log::debug('AI vision could not determine document type');
+
+            return null;
+
+        } catch (\Exception $e) {
+            Log::warning('AI vision extraction failed', [
+                'file' => $filePath,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+    }
+
+    /**
+     * Normalize AI-extracted invoice data to match expected format
+     *
+     * @param  array  $aiData  Data from AI vision extraction
+     * @return array Normalized data
+     */
+    private function normalizeAIInvoiceData(array $aiData): array
+    {
+        // Parse customer data from AI extraction
+        $customerData = [
+            'name' => $aiData['customer_name'] ?? null,
+            'email' => null, // AI doesn't extract email from address block
+        ];
+
+        // Try to parse address if provided
+        if (isset($aiData['customer_address'])) {
+            $addressParts = $this->parseAddress($aiData['customer_address']);
+            $customerData = array_merge($customerData, $addressParts);
+        }
+
+        // Convert dates from German format to Y-m-d
+        $issueDate = $this->convertGermanDate($aiData['issue_date'] ?? null);
+        $dueDate = $this->convertGermanDate($aiData['due_date'] ?? null);
+        $servicePeriodStart = $this->convertGermanDate($aiData['service_period_start'] ?? null);
+        $servicePeriodEnd = $this->convertGermanDate($aiData['service_period_end'] ?? null);
+
+        $data = [
+            'type' => 'invoice',
+            'invoice_number' => $aiData['invoice_number'],
+            'customer_data' => $customerData,
+            'issue_date' => $issueDate,
+            'due_date' => $dueDate,
+            'service_period_start' => $servicePeriodStart,
+            'service_period_end' => $servicePeriodEnd,
+            'service_location' => $aiData['service_location'] ?? null,
+            'project_name' => $aiData['project_name'] ?? null,
+            'items' => $aiData['items'] ?? [],
+            'subtotal' => $aiData['subtotal'] ?? null,
+            'vat_rate' => $aiData['vat_rate'] ?? 19.0,
+            'vat_amount' => $aiData['vat_amount'] ?? null,
+            'total' => $aiData['total'] ?? null,
+            'notes' => $aiData['notes'] ?? null,
+        ];
+
+        // Find matching customer in database
+        $data['existing_customer'] = $this->findExistingCustomer($customerData);
+
+        // Determine if this is a project invoice
+        $data['is_project_invoice'] = ! empty($data['project_name']) ||
+                                    ! empty($data['service_period_start']) ||
+                                    ! empty($data['service_location']);
+
+        return $data;
+    }
+
+    /**
+     * Normalize AI-extracted quote data to match expected format
+     *
+     * @param  array  $aiData  Data from AI vision extraction
+     * @return array Normalized data
+     */
+    private function normalizeAIQuoteData(array $aiData): array
+    {
+        // Parse customer data from AI extraction
+        $customerData = [
+            'name' => $aiData['customer_name'] ?? null,
+            'email' => null,
+        ];
+
+        // Try to parse address if provided
+        if (isset($aiData['customer_address'])) {
+            $addressParts = $this->parseAddress($aiData['customer_address']);
+            $customerData = array_merge($customerData, $addressParts);
+        }
+
+        // Convert dates from German format to Y-m-d
+        $issueDate = $this->convertGermanDate($aiData['issue_date'] ?? null);
+        $validUntil = $this->convertGermanDate($aiData['valid_until'] ?? null);
+
+        return [
+            'type' => 'quote',
+            'quote_number' => $aiData['quote_number'],
+            'customer_data' => $customerData,
+            'issue_date' => $issueDate,
+            'valid_until' => $validUntil,
+            'project_name' => $aiData['project_name'] ?? null,
+            'items' => $aiData['items'] ?? [],
+            'subtotal' => $aiData['subtotal'] ?? null,
+            'vat_rate' => $aiData['vat_rate'] ?? 19.0,
+            'vat_amount' => $aiData['vat_amount'] ?? null,
+            'total' => $aiData['total'] ?? null,
+            'notes' => $aiData['notes'] ?? null,
+            'existing_customer' => $this->findExistingCustomer($customerData),
+        ];
+    }
+
+    /**
+     * Parse address string into components
+     *
+     * @param  string  $address  Full address string
+     * @return array Address components
+     */
+    private function parseAddress(string $address): array
+    {
+        $result = [
+            'street' => null,
+            'city' => null,
+            'zip' => null,
+        ];
+
+        // Pattern: "Street Number, ZIP City"
+        if (preg_match('/([^,]+),\s*(\d{5})\s+(.+)/', $address, $matches)) {
+            $result['street'] = trim($matches[1]);
+            $result['zip'] = $matches[2];
+            $result['city'] = trim($matches[3]);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Convert German date format (DD.MM.YYYY or DD.MM.YY) to Y-m-d
+     *
+     * @param  string|null  $germanDate  Date in German format
+     * @return string|null Date in Y-m-d format or null
+     */
+    private function convertGermanDate(?string $germanDate): ?string
+    {
+        if (! $germanDate) {
+            return null;
+        }
+
+        try {
+            // Try 4-digit year first (DD.MM.YYYY)
+            if (preg_match('/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/', $germanDate, $matches)) {
+                $day = str_pad($matches[1], 2, '0', STR_PAD_LEFT);
+                $month = str_pad($matches[2], 2, '0', STR_PAD_LEFT);
+                $year = $matches[3];
+                $date = Carbon::createFromFormat('d.m.Y', "$day.$month.$year");
+
+                return $date->format('Y-m-d');
+            }
+
+            // Try 2-digit year (DD.MM.YY)
+            if (preg_match('/^(\d{1,2})\.(\d{1,2})\.(\d{2})$/', $germanDate, $matches)) {
+                $day = str_pad($matches[1], 2, '0', STR_PAD_LEFT);
+                $month = str_pad($matches[2], 2, '0', STR_PAD_LEFT);
+                $year = '20'.$matches[3];
+                $date = Carbon::createFromFormat('d.m.Y', "$day.$month.$year");
+
+                return $date->format('Y-m-d');
+            }
+        } catch (\Exception $e) {
+            Log::warning('Failed to convert German date', ['date' => $germanDate, 'error' => $e->getMessage()]);
+        }
+
+        return null;
     }
 
     /**
