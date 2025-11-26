@@ -74,35 +74,62 @@
                                     Einstellungen
                                 </a>
                             @endif
-                            @if(config('app.debug'))
-                                <a href="{{ route('log-viewer.index') }}"
-                                   class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('log-viewer.*') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                    </svg>
-                                    Debug Log
-                                </a>
-                            @endif
                         </div>
                     </div>
 
-                    <!-- User Info & Logout -->
-                    <div class="flex items-center space-x-4">
-                        <div class="text-sm text-gray-500">
-                            <span class="font-medium text-gray-700">{{ auth()->user()->name }}</span>
-                            <span class="text-gray-400">({{ auth()->user()->role->label() }})</span>
+                    <!-- User Dropdown -->
+                    <div class="flex items-center" x-data="{ open: false }">
+                        <div class="relative ml-3">
+                            <div>
+                                <button @click="open = !open" type="button" class="flex items-center max-w-xs rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" id="user-menu-button" aria-expanded="false" aria-haspopup="true">
+                                    <span class="sr-only">Open user menu</span>
+                                    <div class="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center text-white font-medium text-sm">
+                                        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}{{ strtoupper(substr(explode(' ', auth()->user()->name)[1] ?? '', 0, 1)) }}
+                                    </div>
+                                </button>
+                            </div>
+
+                            <!-- Dropdown menu -->
+                            <div x-show="open"
+                                 @click.away="open = false"
+                                 x-transition:enter="transition ease-out duration-100"
+                                 x-transition:enter-start="transform opacity-0 scale-95"
+                                 x-transition:enter-end="transform opacity-100 scale-100"
+                                 x-transition:leave="transition ease-in duration-75"
+                                 x-transition:leave-start="transform opacity-100 scale-100"
+                                 x-transition:leave-end="transform opacity-0 scale-95"
+                                 class="absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                                 role="menu"
+                                 aria-orientation="vertical"
+                                 aria-labelledby="user-menu-button"
+                                 tabindex="-1"
+                                 style="display: none;">
+                                <div class="px-4 py-3 border-b border-gray-100">
+                                    <p class="text-sm font-medium text-gray-900">{{ auth()->user()->name }}</p>
+                                    <p class="text-xs text-gray-500 mt-0.5">{{ auth()->user()->email }}</p>
+                                    <p class="text-xs text-indigo-600 mt-1 font-medium">{{ auth()->user()->role->label() }}</p>
+                                </div>
+                                <div class="py-1">
+                                    @if(config('app.debug'))
+                                        <a href="{{ route('log-viewer.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" tabindex="-1">
+                                            <svg class="w-4 h-4 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                            </svg>
+                                            Debug Log
+                                        </a>
+                                    @endif
+                                    <form action="{{ route('logout') }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" tabindex="-1">
+                                            <svg class="w-4 h-4 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                            </svg>
+                                            Abmelden
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
-                        @if(auth()->user()->isOwner())
-                            <a href="{{ route('users.index') }}" class="text-sm text-gray-500 hover:text-gray-700">
-                                Benutzer
-                            </a>
-                        @endif
-                        <form action="{{ route('logout') }}" method="POST">
-                            @csrf
-                            <button type="submit" class="text-sm text-gray-500 hover:text-gray-700">
-                                Abmelden
-                            </button>
-                        </form>
                     </div>
                 </div>
             </div>

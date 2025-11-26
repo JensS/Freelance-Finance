@@ -16,7 +16,6 @@ use App\Livewire\Quotes\Index as QuotesIndex;
 use App\Livewire\Reports\Index as ReportsIndex;
 use App\Livewire\Settings\Index as SettingsIndex;
 use App\Livewire\Transactions\VerifyImports;
-use App\Livewire\Users\Index as UsersIndex;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -83,14 +82,9 @@ Route::middleware(['auth', 'role'])->group(function () {
             Route::get('/{customer}/edit', CustomersEdit::class)->name('edit');
         });
 
-        // Settings
+        // Settings (includes user management for owners)
         Route::prefix('settings')->name('settings.')->group(function () {
             Route::get('/', SettingsIndex::class)->name('index');
-        });
-
-        // User Management
-        Route::prefix('users')->name('users.')->group(function () {
-            Route::get('/', UsersIndex::class)->name('index');
         });
     });
 

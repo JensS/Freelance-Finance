@@ -42,6 +42,15 @@
             >
                 Wissensbasis
             </button>
+            @if(auth()->user()->isOwner())
+                <button
+                    @click="activeTab = 'users'"
+                    :class="activeTab === 'users' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'"
+                    class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+                >
+                    Benutzerverwaltung
+                </button>
+            @endif
         </nav>
     </div>
 
@@ -823,4 +832,11 @@
     <div x-show="activeTab === 'knowledge'" x-cloak>
         @livewire('settings.knowledge-base-settings')
     </div>
+
+    <!-- User Management Tab Content -->
+    @if(auth()->user()->isOwner())
+        <div x-show="activeTab === 'users'" x-cloak>
+            @livewire('users.index')
+        </div>
+    @endif
 </div>

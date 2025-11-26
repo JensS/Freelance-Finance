@@ -5,7 +5,6 @@ namespace App\Http\Middleware;
 use App\Enums\Role;
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnsureUserHasRole
@@ -18,11 +17,9 @@ class EnsureUserHasRole
      */
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
-        $user = Auth::user();
-
-        if (! $user) {
-            return redirect()->route('login');
-        }
+        // User authentication is handled by the 'auth' middleware
+        // This middleware only checks role-based authorization
+        $user = $request->user();
 
         // If specific roles are provided, check against them
         if (! empty($roles)) {
