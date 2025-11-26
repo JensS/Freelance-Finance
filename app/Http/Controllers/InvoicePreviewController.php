@@ -61,9 +61,6 @@ class InvoicePreviewController extends Controller
         $invoice->customer_id = $customer->id;
         $invoice->id = 999999;
 
-        // Add subject for display
-        $invoice->subject = 'Webdesign-Leistungen November 2025';
-
         return $invoice;
     }
 

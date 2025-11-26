@@ -12,4 +12,3 @@ parameters:
         - '#Unsafe usage of new static#'
     excludePaths:
         - ./*/*/FileToBeExcluded.php
-    checkMissingIterableValueType: false
