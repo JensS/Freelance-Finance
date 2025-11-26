@@ -368,6 +368,7 @@ class MonthlyView extends Component
             }
 
             // Check if cancelled before starting
+            // @phpstan-ignore-next-line - Property may be changed by other methods
             if ($this->aiProcessingCancelled) {
                 return;
             }
@@ -383,6 +384,7 @@ class MonthlyView extends Component
             $documents = $paperlessService->searchDocumentsByDateRange($startDate, $endDate, 'Eingangsrechnung');
 
             // Check if cancelled after Paperless search
+            // @phpstan-ignore-next-line - Property may be changed by other methods
             if ($this->aiProcessingCancelled) {
                 return;
             }
@@ -393,6 +395,7 @@ class MonthlyView extends Component
             }
 
             // Check if cancelled before AI ranking
+            // @phpstan-ignore-next-line - Property may be changed by other methods
             if ($this->aiProcessingCancelled) {
                 return;
             }
@@ -488,6 +491,7 @@ class MonthlyView extends Component
             $response = $aiService->generateText($prompt, ['temperature' => 0.3]);
 
             // Check if cancelled after AI response (request completed)
+            // @phpstan-ignore-next-line - Property may be changed by other methods
             if ($this->aiProcessingCancelled) {
                 \Log::info('AI ranking cancelled after response received');
 

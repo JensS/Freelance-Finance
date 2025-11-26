@@ -124,7 +124,7 @@ class AIVisionService
         // Add "Bewirtung" note if it's a meal/restaurant expense
         if ($isBewirtung && $description) {
             $description = trim($description).' [Bewirtung]';
-        } elseif ($isBewirtung && ! $description) {
+        } elseif ($isBewirtung && empty($description)) {
             $description = 'Bewirtung';
         }
 

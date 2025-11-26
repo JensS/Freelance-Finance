@@ -59,7 +59,9 @@ class Index extends Component
         $this->editingUserId = $user->id;
         $this->name = $user->name;
         $this->email = $user->email;
-        $this->role = $user->role->value;
+        /** @var Role $userRole */
+        $userRole = $user->role;
+        $this->role = $userRole->value;
         $this->password = '';
         $this->password_confirmation = '';
         $this->showModal = true;
@@ -109,7 +111,9 @@ class Index extends Component
             $user = User::findOrFail($this->editingUserId);
 
             // Prevent demoting self from owner role
-            if ($user->id === Auth::id() && $user->role === Role::Owner && $this->role !== Role::Owner->value) {
+            /** @var Role $userRole */
+            $userRole = $user->role;
+            if ($user->id === Auth::id() && $userRole === Role::Owner && $this->role !== Role::Owner->value) {
                 session()->flash('error', 'Sie können sich nicht selbst die Inhaber-Rolle entziehen.');
 
                 return;

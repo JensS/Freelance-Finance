@@ -454,7 +454,7 @@ class VerifyImports extends Component
 
         } catch (\Exception $e) {
             \Log::error('AI extraction failed', [
-                'transaction_id' => $this->currentTransaction?->id,
+                'transaction_id' => $this->currentTransaction->id ?? null,
                 'error' => $e->getMessage(),
             ]);
 

@@ -9,6 +9,10 @@ parameters:
         - routes
     level: 5
     ignoreErrors:
-        - '#Unsafe usage of new static#'
+        # Prism PHP package - classes may not be available in CI environment
+        - '#Call to static method .+ on an unknown class EchoLabs\\Prism\\#'
+        - '#Instantiated class EchoLabs\\Prism\\.+ not found#'
+        - '#Method .+ has invalid return type EchoLabs\\Prism\\#'
+        - '#Access to constant .+ on an unknown class EchoLabs\\Prism\\#'
     excludePaths:
         - ./*/*/FileToBeExcluded.php

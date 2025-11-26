@@ -58,8 +58,10 @@ class Edit extends Component
 
         // Load invoice data
         $this->customer_id = $invoice->customer_id;
-        $this->selectedCustomer = $invoice->customer;
-        $this->customerSearch = $invoice->customer->name;
+        /** @var Customer|null $customer */
+        $customer = $invoice->customer;
+        $this->selectedCustomer = $customer;
+        $this->customerSearch = $customer !== null ? $customer->name : '';
 
         $this->type = $invoice->type;
         $this->project_name = $invoice->project_name ?? '';
@@ -97,8 +99,10 @@ class Edit extends Component
     public function selectCustomer(int $customerId)
     {
         $this->customer_id = $customerId;
-        $this->selectedCustomer = Customer::find($customerId);
-        $this->customerSearch = $this->selectedCustomer->name;
+        /** @var Customer|null $customer */
+        $customer = Customer::find($customerId);
+        $this->selectedCustomer = $customer;
+        $this->customerSearch = $customer !== null ? $customer->name : '';
         $this->searchResults = [];
     }
 

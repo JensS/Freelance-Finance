@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('bank_transactions', function (Blueprint $table) {
             $table->string('category')->nullable()->after('type');
             $table->text('description')->nullable()->after('title');
-            $table->foreignId('invoice_id')->nullable()->constrained()->after('bank_statement_id');
+            $table->foreignId('invoice_id')->nullable()->after('bank_statement_id')->constrained();
             $table->boolean('is_business_expense')->default(false)->after('is_validated');
             $table->text('raw_data')->nullable()->after('is_business_expense');
         });

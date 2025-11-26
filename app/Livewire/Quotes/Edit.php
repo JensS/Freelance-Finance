@@ -52,8 +52,10 @@ class Edit extends Component
 
         // Load quote data
         $this->customer_id = $quote->customer_id;
-        $this->selectedCustomer = $quote->customer;
-        $this->customerSearch = $quote->customer->name;
+        /** @var Customer|null $customer */
+        $customer = $quote->customer;
+        $this->selectedCustomer = $customer;
+        $this->customerSearch = $customer !== null ? $customer->name : '';
 
         $this->type = $quote->type;
         $this->project_name = $quote->project_name ?? '';
@@ -88,8 +90,10 @@ class Edit extends Component
     public function selectCustomer(int $customerId)
     {
         $this->customer_id = $customerId;
-        $this->selectedCustomer = Customer::find($customerId);
-        $this->customerSearch = $this->selectedCustomer->name;
+        /** @var Customer|null $customer */
+        $customer = Customer::find($customerId);
+        $this->selectedCustomer = $customer;
+        $this->customerSearch = $customer !== null ? $customer->name : '';
         $this->searchResults = [];
     }
 
