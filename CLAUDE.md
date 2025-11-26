@@ -243,9 +243,6 @@ Store in `settings` table as JSON:
 **Note**: Paperless and Ollama settings are now configurable via Settings UI and stored in database. Environment variables below serve as defaults only.
 
 ```bash
-# Authentication
-APP_PASSWORD=your_simple_password
-
 # Ollama AI (configurable via Settings → Integrationen)
 OLLAMA_API_URL=http://jens.pc.local:11434
 
@@ -350,13 +347,54 @@ The system automatically categorizes installed models into text and vision types
 5. Extracts: date, merchant, amounts (gross/net/VAT), description, transaction type
 6. Populates form fields for user review
 
-## Authentication
+## Authentication & Authorization
 
-Simple password-based authentication:
-- Password stored in `.env` as `APP_PASSWORD`
-- Single-user system
-- Middleware: `App\Http\Middleware\SimpleAuth`
-- Login page: Livewire component `Login`
+Multi-user authentication with role-based access control:
+
+### User Roles
+Two roles are available:
+- **Owner (Inhaber)**: Full access to all features including invoices, quotes, customers, settings, and user management
+- **Tax Accountant (Steuerberater)**: Limited access to accounting, transaction verification, reports, and Paperless documents
+
+### Authentication
+- Email + password authentication using Laravel's built-in Auth system
+- Session-based with remember token support
+- Login page: Livewire component `App\Livewire\Auth\Login`
+- Middleware: `App\Http\Middleware\EnsureUserHasRole`
+
+### Role Enum
+Located at `App\Enums\Role`:
+- `Role::Owner` - Admin role with full access
+- `Role::TaxAccountant` - Limited access for tax advisors
+
+### User Management
+- Only Owners can manage users
+- Available at `/users` route
+- Owners cannot delete themselves or demote themselves from Owner role
+
+### Initial Setup
+Run the seeder to create the initial admin account:
+```bash
+./vendor/bin/sail artisan db:seed --class=UserSeeder
+```
+Default credentials (change after first login!):
+- Email: admin@example.com
+- Password: password
+
+### Access Control by Route
+**Owner only:**
+- `/invoices/*` - Invoice management
+- `/quotes/*` - Quote management
+- `/customers/*` - Customer management
+- `/settings/*` - System settings
+- `/users/*` - User management
+
+**Owner + Tax Accountant:**
+- `/dashboard` - Dashboard
+- `/accounting/*` - Monthly accounting
+- `/transactions/*` - Transaction verification
+- `/reports/*` - Financial reports
+- `/paperless/*` - Paperless document access
 
 ## Important Notes
 

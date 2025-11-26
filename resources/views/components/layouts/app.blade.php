@@ -34,18 +34,20 @@
                                class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('dashboard') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium">
                                 Dashboard
                             </a>
-                            <a href="{{ route('invoices.index') }}"
-                               class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('invoices.*') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium">
-                                Rechnungen
-                            </a>
-                            <a href="{{ route('quotes.index') }}"
-                               class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('quotes.*') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium">
-                                Angebote
-                            </a>
-                            <a href="{{ route('customers.index') }}"
-                               class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('customers.*') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium">
-                                Kunden
-                            </a>
+                            @if(auth()->user()->isOwner())
+                                <a href="{{ route('invoices.index') }}"
+                                   class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('invoices.*') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium">
+                                    Rechnungen
+                                </a>
+                                <a href="{{ route('quotes.index') }}"
+                                   class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('quotes.*') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium">
+                                    Angebote
+                                </a>
+                                <a href="{{ route('customers.index') }}"
+                                   class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('customers.*') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium">
+                                    Kunden
+                                </a>
+                            @endif
                             <a href="{{ route('accounting.index') }}"
                                class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('accounting.*') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium">
                                 Buchhaltung
@@ -66,15 +68,26 @@
                                class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('reports.*') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium">
                                 Berichte
                             </a>
-                            <a href="{{ route('settings.index') }}"
-                               class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('settings.*') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium">
-                                Einstellungen
-                            </a>
+                            @if(auth()->user()->isOwner())
+                                <a href="{{ route('settings.index') }}"
+                                   class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('settings.*') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium">
+                                    Einstellungen
+                                </a>
+                            @endif
                         </div>
                     </div>
 
-                    <!-- Logout -->
-                    <div class="flex items-center">
+                    <!-- User Info & Logout -->
+                    <div class="flex items-center space-x-4">
+                        <div class="text-sm text-gray-500">
+                            <span class="font-medium text-gray-700">{{ auth()->user()->name }}</span>
+                            <span class="text-gray-400">({{ auth()->user()->role->label() }})</span>
+                        </div>
+                        @if(auth()->user()->isOwner())
+                            <a href="{{ route('users.index') }}" class="text-sm text-gray-500 hover:text-gray-700">
+                                Benutzer
+                            </a>
+                        @endif
                         <form action="{{ route('logout') }}" method="POST">
                             @csrf
                             <button type="submit" class="text-sm text-gray-500 hover:text-gray-700">
