@@ -39,11 +39,11 @@ return new class extends Migration
         ");
 
         // Calculate VAT amount
-        DB::statement("
+        DB::statement('
             UPDATE bank_transactions
             SET vat_amount = amount - net_amount
             WHERE net_amount IS NOT NULL
-        ");
+        ');
     }
 
     /**

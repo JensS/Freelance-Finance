@@ -1,4 +1,6 @@
 <div x-data="{
+    showPreview: false,
+    previewUrl: '',
     contextMenu: { show: false, x: 0, y: 0, quoteId: null, isConverted: false },
     showDeleteConfirm: false,
     deleteQuoteId: null
@@ -191,6 +193,21 @@
 
         <button
             @click="
+                previewUrl = `/quotes/${contextMenu.quoteId}/preview-pdf`;
+                showPreview = true;
+                contextMenu.show = false;
+            "
+            class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+        >
+            <svg class="h-4 w-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            Vorschau anzeigen
+        </button>
+
+        <button
+            @click="
                 $wire.call('uploadToPaperless', contextMenu.quoteId);
                 contextMenu.show = false;
             "
@@ -307,6 +324,67 @@
                     >
                         Abbrechen
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div
+        x-show="showPreview"
+        x-cloak
+        class="fixed inset-0 z-50 overflow-y-auto"
+        aria-labelledby="modal-title"
+        role="dialog"
+        aria-modal="true"
+        @keydown.escape.window="showPreview = false"
+    >
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Background overlay -->
+            <div
+                x-show="showPreview"
+                x-transition:enter="ease-out duration-300"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="ease-in duration-200"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+                @click="showPreview = false"
+            ></div>
+
+            <!-- Modal panel -->
+            <div
+                x-show="showPreview"
+                x-transition:enter="ease-out duration-300"
+                x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave="ease-in duration-200"
+                x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                class="relative z-10 inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-6xl sm:w-full"
+                style="height: 90vh;"
+            >
+                <!-- Modal header -->
+                <div class="bg-white px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+                    <h3 class="text-lg font-medium text-gray-900">Angebotsvorschau</h3>
+                    <button
+                        @click="showPreview = false"
+                        class="rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Modal body with iframe -->
+                <div class="bg-gray-50" style="height: calc(90vh - 60px);">
+                    <iframe
+                        :src="previewUrl"
+                        class="w-full h-full border-0"
+                        x-show="showPreview"
+                    ></iframe>
                 </div>
             </div>
         </div>

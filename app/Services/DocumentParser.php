@@ -698,6 +698,7 @@ class DocumentParser
                     }
                 } catch (\Exception $e) {
                     Log::debug('Failed to parse date', ['date_string' => $dateStr, 'error' => $e->getMessage()]);
+
                     continue;
                 }
             }

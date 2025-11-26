@@ -8,6 +8,8 @@ services:
         image: 'sail-8.4/app'
         extra_hosts:
             - 'host.docker.internal:host-gateway'
+            - 'jens-pc.local:192.168.178.74'
+            - 'jens.pc.local:192.168.178.74'
         ports:
             - '${APP_PORT:-80}:80'
             - '${VITE_PORT:-5173}:${VITE_PORT:-5173}'

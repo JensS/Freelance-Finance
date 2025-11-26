@@ -17,40 +17,64 @@ class BrandingSettings extends Component
 
     // Logo
     public $company_logo;
+
     public ?string $company_logo_path = null;
+
     public ?string $preview_logo_url = null;
 
     // Heading font
     public $heading_font_file;
+
     public string $heading_font_family = 'Fira Sans';
+
     public ?string $heading_font_path = null;
+
     public ?string $preview_heading_font_url = null;
+
     public string $heading_font_size = '24px';
+
     public string $heading_font_weight = 'bold';
+
     public string $heading_font_style = 'normal';
+
     public string $heading_font_color = '#333333';
 
     // Small heading font
     public $small_heading_font_file;
+
     public string $small_heading_font_family = 'Fira Sans';
+
     public ?string $small_heading_font_path = null;
+
     public ?string $preview_small_heading_font_url = null;
+
     public string $small_heading_font_size = '14px';
+
     public string $small_heading_font_weight = 'bold';
+
     public string $small_heading_font_style = 'normal';
+
     public string $small_heading_font_color = '#333333';
 
     // Body font
     public $body_font_file;
+
     public string $body_font_family = 'Fira Sans';
+
     public ?string $body_font_path = null;
+
     public ?string $preview_body_font_url = null;
+
     public string $body_font_size = '12px';
+
     public string $body_font_weight = 'normal';
+
     public string $body_font_style = 'normal';
+
     public string $body_font_color = '#333333';
 
     public string $success = '';
+
     public int $previewKey = 0;
 
     public function mount()
@@ -70,6 +94,8 @@ class BrandingSettings extends Component
     {
         if ($this->heading_font_file) {
             $this->preview_heading_font_url = $this->heading_font_file->temporaryUrl();
+            // Auto-generate font family name from filename
+            $this->heading_font_family = $this->extractFontNameFromFile($this->heading_font_file);
         }
         $this->reloadPreview();
     }
@@ -78,6 +104,8 @@ class BrandingSettings extends Component
     {
         if ($this->small_heading_font_file) {
             $this->preview_small_heading_font_url = $this->small_heading_font_file->temporaryUrl();
+            // Auto-generate font family name from filename
+            $this->small_heading_font_family = $this->extractFontNameFromFile($this->small_heading_font_file);
         }
         $this->reloadPreview();
     }
@@ -86,8 +114,27 @@ class BrandingSettings extends Component
     {
         if ($this->body_font_file) {
             $this->preview_body_font_url = $this->body_font_file->temporaryUrl();
+            // Auto-generate font family name from filename
+            $this->body_font_family = $this->extractFontNameFromFile($this->body_font_file);
         }
         $this->reloadPreview();
+    }
+
+    /**
+     * Extract font name from uploaded file
+     */
+    private function extractFontNameFromFile($file): string
+    {
+        $filename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+
+        // Remove common suffixes like -Regular, -Bold, etc.
+        $fontName = preg_replace('/-(Regular|Bold|Italic|Light|Medium|SemiBold|ExtraBold|Black|Thin)$/i', '', $filename);
+
+        // Replace hyphens and underscores with spaces
+        $fontName = str_replace(['_', '-'], ' ', $fontName);
+
+        // Title case
+        return ucwords($fontName);
     }
 
     // Reload preview when any property changes
@@ -112,6 +159,7 @@ class BrandingSettings extends Component
         if ($this->heading_font_path) {
             return Storage::disk('public')->url($this->heading_font_path);
         }
+
         return null;
     }
 
@@ -123,6 +171,7 @@ class BrandingSettings extends Component
         if ($this->small_heading_font_path) {
             return Storage::disk('public')->url($this->small_heading_font_path);
         }
+
         return null;
     }
 
@@ -134,6 +183,7 @@ class BrandingSettings extends Component
         if ($this->body_font_path) {
             return Storage::disk('public')->url($this->body_font_path);
         }
+
         return null;
     }
 
@@ -213,7 +263,7 @@ class BrandingSettings extends Component
                     }
                 },
             ],
-            'heading_font_family' => 'required|string|max:255',
+            'heading_font_family' => 'nullable|string|max:255',
             'heading_font_size' => 'required|string|max:10',
             'heading_font_weight' => 'required|in:normal,bold',
             'heading_font_style' => 'required|in:normal,italic',
@@ -232,7 +282,7 @@ class BrandingSettings extends Component
                     }
                 },
             ],
-            'small_heading_font_family' => 'required|string|max:255',
+            'small_heading_font_family' => 'nullable|string|max:255',
             'small_heading_font_size' => 'required|string|max:10',
             'small_heading_font_weight' => 'required|in:normal,bold',
             'small_heading_font_style' => 'required|in:normal,italic',
@@ -251,7 +301,7 @@ class BrandingSettings extends Component
                     }
                 },
             ],
-            'body_font_family' => 'required|string|max:255',
+            'body_font_family' => 'nullable|string|max:255',
             'body_font_size' => 'required|string|max:10',
             'body_font_weight' => 'required|in:normal,bold',
             'body_font_style' => 'required|in:normal,italic',
@@ -273,7 +323,9 @@ class BrandingSettings extends Component
             if ($this->heading_font_path && Storage::disk('public')->exists($this->heading_font_path)) {
                 Storage::disk('public')->delete($this->heading_font_path);
             }
-            $this->heading_font_path = $this->heading_font_file->storeAs('fonts', 'heading-' . $this->heading_font_file->getClientOriginalName(), 'public');
+            $this->heading_font_path = $this->heading_font_file->storeAs('fonts', 'heading-'.$this->heading_font_file->getClientOriginalName(), 'public');
+            // Auto-generate font name from filename
+            $this->heading_font_family = $this->extractFontNameFromFile($this->heading_font_file);
         }
 
         // Handle small heading font upload
@@ -281,7 +333,9 @@ class BrandingSettings extends Component
             if ($this->small_heading_font_path && Storage::disk('public')->exists($this->small_heading_font_path)) {
                 Storage::disk('public')->delete($this->small_heading_font_path);
             }
-            $this->small_heading_font_path = $this->small_heading_font_file->storeAs('fonts', 'small-heading-' . $this->small_heading_font_file->getClientOriginalName(), 'public');
+            $this->small_heading_font_path = $this->small_heading_font_file->storeAs('fonts', 'small-heading-'.$this->small_heading_font_file->getClientOriginalName(), 'public');
+            // Auto-generate font name from filename
+            $this->small_heading_font_family = $this->extractFontNameFromFile($this->small_heading_font_file);
         }
 
         // Handle body font upload
@@ -289,7 +343,9 @@ class BrandingSettings extends Component
             if ($this->body_font_path && Storage::disk('public')->exists($this->body_font_path)) {
                 Storage::disk('public')->delete($this->body_font_path);
             }
-            $this->body_font_path = $this->body_font_file->storeAs('fonts', 'body-' . $this->body_font_file->getClientOriginalName(), 'public');
+            $this->body_font_path = $this->body_font_file->storeAs('fonts', 'body-'.$this->body_font_file->getClientOriginalName(), 'public');
+            // Auto-generate font name from filename
+            $this->body_font_family = $this->extractFontNameFromFile($this->body_font_file);
         }
 
         // Save font styles

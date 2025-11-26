@@ -1,6 +1,6 @@
 <?php
 
-use App\Livewire\Accounting\Index as AccountingIndex;
+use App\Livewire\Accounting\MonthlyView;
 use App\Livewire\Auth\Login;
 use App\Livewire\Customers\Create as CustomersCreate;
 use App\Livewire\Customers\Edit as CustomersEdit;
@@ -68,7 +68,13 @@ Route::middleware(['auth', 'role'])->group(function () {
             Route::get('/create', QuotesCreate::class)->name('create');
             Route::get('/{quote}/edit', QuotesEdit::class)->name('edit');
             Route::get('/import', \App\Livewire\Quotes\Import::class)->name('import');
+            Route::get('/{quote}/preview-html', [\App\Http\Controllers\QuotePreviewController::class, 'showHtml'])->name('preview-html');
+            Route::get('/{quote}/preview-pdf', [\App\Http\Controllers\QuotePreviewController::class, 'showPdf'])->name('preview-pdf');
         });
+
+        // Preview routes for dummy quote (branding settings)
+        Route::get('/preview/quote-html', [\App\Http\Controllers\QuotePreviewController::class, 'previewHtml'])->name('preview.quote.html');
+        Route::get('/preview/quote-pdf', [\App\Http\Controllers\QuotePreviewController::class, 'previewPdf'])->name('preview.quote.pdf');
 
         // Customers
         Route::prefix('customers')->name('customers.')->group(function () {
@@ -91,7 +97,14 @@ Route::middleware(['auth', 'role'])->group(function () {
     // Routes accessible to both Owner and Tax Accountant
     // Accounting
     Route::prefix('accounting')->name('accounting.')->group(function () {
-        Route::get('/', AccountingIndex::class)->name('index');
+        Route::get('/', function () {
+            // Redirect to current month
+            return redirect()->route('accounting.month', [
+                'year' => now()->year,
+                'month' => now()->month,
+            ]);
+        })->name('index');
+        Route::get('/month/{year}/{month}', MonthlyView::class)->name('month');
     });
 
     // Transactions

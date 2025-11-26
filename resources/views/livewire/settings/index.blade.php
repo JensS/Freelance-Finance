@@ -35,6 +35,13 @@
             >
                 Integrationen
             </button>
+            <button
+                @click="activeTab = 'knowledge'"
+                :class="activeTab === 'knowledge' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'"
+                class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+            >
+                Wissensbasis
+            </button>
         </nav>
     </div>
 
@@ -416,6 +423,7 @@
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             >
                                 <option value="none">Kein Fallback</option>
+                                <option value="ollama">Ollama (lokal)</option>
                                 <option value="openai">OpenAI</option>
                                 <option value="anthropic">Anthropic (Claude)</option>
                                 <option value="openrouter">OpenRouter</option>
@@ -621,7 +629,7 @@
                         </div>
 
                         <!-- Ollama Model (Text) -->
-                        <div>
+                        <div wire:poll.2s="checkTextModelProgress">
                             <label for="ollama_model" class="block text-sm font-medium text-gray-700">
                                 AI Model (Text)
                             </label>
@@ -646,35 +654,59 @@
                                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                             @enderror
 
-                            @if(empty($availableTextModels))
-                                <div class="mt-3">
-                                    <button
-                                        type="button"
-                                        wire:click="installRecommendedTextModel"
-                                        wire:loading.attr="disabled"
-                                        wire:target="installRecommendedTextModel"
-                                        style="background: linear-gradient(to right, #059669, #10b981);"
-                                        class="w-full inline-flex justify-center items-center px-4 py-2 border-0 rounded-md shadow-sm text-sm font-medium text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        <svg wire:loading.remove wire:target="installRecommendedTextModel" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                            @if(!$hasRecommendedTextModel)
+                                <div class="mt-3 bg-amber-50 border border-amber-200 rounded-lg p-4">
+                                    <div class="flex items-start">
+                                        <svg class="w-5 h-5 text-amber-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
                                         </svg>
-                                        <svg wire:loading wire:target="installRecommendedTextModel" class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        <span wire:loading.remove wire:target="installRecommendedTextModel">
-                                            Empfehlung installieren: gpt-oss:20b
-                                        </span>
-                                        <span wire:loading wire:target="installRecommendedTextModel">
-                                            Installiere gpt-oss:20b...
-                                        </span>
-                                    </button>
-                                    <p class="mt-2 text-xs text-gray-500">
-                                        Installiert das empfohlene Text-Modell (ca. 11 GB). Dies kann 5-15 Minuten dauern.
-                                    </p>
+                                        <div class="flex-1">
+                                            <h4 class="text-sm font-medium text-amber-800 mb-1">
+                                                Empfohlenes Modell fehlt: {{ \App\Livewire\Settings\Index::RECOMMENDED_TEXT_MODEL }}
+                                            </h4>
+                                            <p class="text-xs text-amber-700 mb-3">
+                                                Dieses Modell bietet die beste Leistung für finanzielle Analysen und unterstützt "Thinking Mode" für bessere Ergebnisse.
+                                            </p>
+                                            <button
+                                                type="button"
+                                                wire:click="installRecommendedTextModel"
+                                                wire:loading.attr="disabled"
+                                                wire:target="installRecommendedTextModel"
+                                                style="background: linear-gradient(to right, #059669, #10b981);"
+                                                class="inline-flex justify-center items-center px-4 py-2 border-0 rounded-md shadow-sm text-sm font-medium text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <svg wire:loading.remove wire:target="installRecommendedTextModel" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                                                </svg>
+                                                <svg wire:loading wire:target="installRecommendedTextModel" class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                <span wire:loading.remove wire:target="installRecommendedTextModel">
+                                                    Installieren
+                                                </span>
+                                                <span wire:loading wire:target="installRecommendedTextModel">
+                                                    Installiere...
+                                                </span>
+                                            </button>
+                                            @if($installingTextModel)
+                                                <div class="mt-3">
+                                                    <!-- Progress Bar -->
+                                                    <div class="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                                                        <div class="bg-green-600 h-2.5 rounded-full transition-all duration-300" style="width: {{ $installProgressPercent }}%"></div>
+                                                    </div>
+                                                    <p class="text-xs text-amber-700">
+                                                        {{ $installProgress }} ({{ $installProgressPercent }}%)
+                                                    </p>
+                                                </div>
+                                            @endif
+                                            <p class="mt-2 text-xs text-amber-600">
+                                                ca. 11 GB Download • 5-15 Minuten Installation
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
-                            @else
+                            @elseif(!empty($availableTextModels))
                                 <p class="mt-2 text-sm text-gray-500">
                                     Das zu verwendende Ollama Modell für Textanalyse.
                                 </p>
@@ -682,7 +714,7 @@
                         </div>
 
                         <!-- Ollama Vision Model -->
-                        <div>
+                        <div wire:poll.2s="checkVisionModelProgress">
                             <label for="ollama_vision_model" class="block text-sm font-medium text-gray-700">
                                 AI Model (Vision)
                             </label>
@@ -707,41 +739,65 @@
                                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                             @enderror
 
-                            @if(empty($availableVisionModels))
-                                <div class="mt-3">
-                                    <button
-                                        type="button"
-                                        wire:click="installRecommendedVisionModel"
-                                        wire:loading.attr="disabled"
-                                        wire:target="installRecommendedVisionModel"
-                                        style="background: linear-gradient(to right, #2563eb, #4f46e5);"
-                                        class="w-full inline-flex justify-center items-center px-4 py-2 border-0 rounded-md shadow-sm text-sm font-medium text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        <svg wire:loading.remove wire:target="installRecommendedVisionModel" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                            @if(!$hasRecommendedVisionModel)
+                                <div class="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                    <div class="flex items-start">
+                                        <svg class="w-5 h-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
                                         </svg>
-                                        <svg wire:loading wire:target="installRecommendedVisionModel" class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        <span wire:loading.remove wire:target="installRecommendedVisionModel">
-                                            Empfehlung installieren: granite-3.2-vision
-                                        </span>
-                                        <span wire:loading wire:target="installRecommendedVisionModel">
-                                            Installiere granite-3.2-vision...
-                                        </span>
-                                    </button>
-                                    <p class="mt-2 text-xs text-gray-500">
-                                        Installiert das empfohlene Vision-Modell für OCR und Dokumentenerkennung (ca. 2 GB). Dies kann 2-10 Minuten dauern.
-                                    </p>
-                                    <p class="mt-2 text-xs text-gray-400">
-                                        <strong>Weitere Optionen:</strong><br>
-                                        • <code>ollama pull llama3.2-vision</code> - Meta's Vision-Modell (7.9 GB)<br>
-                                        • <code>ollama pull llava</code> - Beliebtes Vision-Modell (4.5 GB)<br>
-                                        • <code>ollama pull qwen2-vl</code> - Starke visuelle Analyse (4-8 GB)
-                                    </p>
+                                        <div class="flex-1">
+                                            <h4 class="text-sm font-medium text-blue-800 mb-1">
+                                                Empfohlenes Modell fehlt: {{ \App\Livewire\Settings\Index::RECOMMENDED_VISION_MODEL }}
+                                            </h4>
+                                            <p class="text-xs text-blue-700 mb-3">
+                                                Dieses Vision-Modell bietet die beste Leistung für OCR und automatische Belegerkennung mit hoher Genauigkeit.
+                                            </p>
+                                            <button
+                                                type="button"
+                                                wire:click="installRecommendedVisionModel"
+                                                wire:loading.attr="disabled"
+                                                wire:target="installRecommendedVisionModel"
+                                                style="background: linear-gradient(to right, #2563eb, #4f46e5);"
+                                                class="inline-flex justify-center items-center px-4 py-2 border-0 rounded-md shadow-sm text-sm font-medium text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <svg wire:loading.remove wire:target="installRecommendedVisionModel" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                                                </svg>
+                                                <svg wire:loading wire:target="installRecommendedVisionModel" class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                <span wire:loading.remove wire:target="installRecommendedVisionModel">
+                                                    Installieren
+                                                </span>
+                                                <span wire:loading wire:target="installRecommendedVisionModel">
+                                                    Installiere...
+                                                </span>
+                                            </button>
+                                            @if($installingVisionModel)
+                                                <div class="mt-3">
+                                                    <!-- Progress Bar -->
+                                                    <div class="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                                                        <div class="bg-blue-600 h-2.5 rounded-full transition-all duration-300" style="width: {{ $installProgressPercent }}%"></div>
+                                                    </div>
+                                                    <p class="text-xs text-blue-700">
+                                                        {{ $installProgress }} ({{ $installProgressPercent }}%)
+                                                    </p>
+                                                </div>
+                                            @endif
+                                            <p class="mt-2 text-xs text-blue-600">
+                                                ca. 2 GB Download • 2-10 Minuten Installation
+                                            </p>
+                                            <p class="mt-2 text-xs text-blue-500">
+                                                <strong>Weitere Optionen:</strong><br>
+                                                • <code class="bg-white px-1 py-0.5 rounded">ollama pull llama3.2-vision</code> - Meta's Vision-Modell (7.9 GB)<br>
+                                                • <code class="bg-white px-1 py-0.5 rounded">ollama pull llava</code> - Beliebtes Vision-Modell (4.5 GB)<br>
+                                                • <code class="bg-white px-1 py-0.5 rounded">ollama pull qwen2-vl</code> - Starke visuelle Analyse (4-8 GB)
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
-                            @else
+                            @elseif(!empty($availableVisionModels))
                                 <p class="mt-2 text-sm text-gray-500">
                                     Das zu verwendende Vision-Modell für PDF-Analyse und Belegerkennung.
                                 </p>
@@ -761,5 +817,10 @@
                 </button>
             </div>
         </form>
+    </div>
+
+    <!-- Knowledge Base Tab Content -->
+    <div x-show="activeTab === 'knowledge'" x-cloak>
+        @livewire('settings.knowledge-base-settings')
     </div>
 </div>

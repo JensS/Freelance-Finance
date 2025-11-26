@@ -194,7 +194,7 @@
 
         <button
             @click="
-                previewUrl = `/invoices/${contextMenu.invoiceId}/preview-html`;
+                previewUrl = `/invoices/${contextMenu.invoiceId}/preview-pdf`;
                 showPreview = true;
                 contextMenu.show = false;
             "

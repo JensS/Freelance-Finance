@@ -79,29 +79,13 @@
                             class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
                         >
                         @if($heading_font_path)
-                            <p class="mt-2 text-sm text-gray-500">Aktuell: {{ basename($heading_font_path) }}</p>
+                            <p class="mt-2 text-sm text-gray-500">Aktuell: {{ $heading_font_family }}</p>
                         @endif
                         @error('heading_font_file')
                             <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                         <div wire:loading wire:target="heading_font_file" class="mt-2 text-sm text-gray-500">Wird hochgeladen...</div>
-                    </div>
-
-                    <!-- Font Family -->
-                    <div>
-                        <label for="heading_font_family" class="block text-sm font-medium text-gray-700">
-                            Schriftart-Name
-                        </label>
-                        <input
-                            wire:model.live="heading_font_family"
-                            type="text"
-                            id="heading_font_family"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            placeholder="z.B. Fira Sans"
-                        >
-                        @error('heading_font_family')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                        <p class="mt-2 text-xs text-gray-500">Der Schriftname wird automatisch aus dem Dateinamen generiert</p>
                     </div>
 
                     <!-- Font Size, Weight, Style -->
@@ -204,29 +188,13 @@
                             class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
                         >
                         @if($small_heading_font_path)
-                            <p class="mt-2 text-sm text-gray-500">Aktuell: {{ basename($small_heading_font_path) }}</p>
+                            <p class="mt-2 text-sm text-gray-500">Aktuell: {{ $small_heading_font_family }}</p>
                         @endif
                         @error('small_heading_font_file')
                             <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                         <div wire:loading wire:target="small_heading_font_file" class="mt-2 text-sm text-gray-500">Wird hochgeladen...</div>
-                    </div>
-
-                    <!-- Font Family -->
-                    <div>
-                        <label for="small_heading_font_family" class="block text-sm font-medium text-gray-700">
-                            Schriftart-Name
-                        </label>
-                        <input
-                            wire:model.live="small_heading_font_family"
-                            type="text"
-                            id="small_heading_font_family"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            placeholder="z.B. Fira Sans"
-                        >
-                        @error('small_heading_font_family')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                        <p class="mt-2 text-xs text-gray-500">Der Schriftname wird automatisch aus dem Dateinamen generiert</p>
                     </div>
 
                     <!-- Font Size, Weight, Style -->
@@ -329,29 +297,13 @@
                             class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
                         >
                         @if($body_font_path)
-                            <p class="mt-2 text-sm text-gray-500">Aktuell: {{ basename($body_font_path) }}</p>
+                            <p class="mt-2 text-sm text-gray-500">Aktuell: {{ $body_font_family }}</p>
                         @endif
                         @error('body_font_file')
                             <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                         <div wire:loading wire:target="body_font_file" class="mt-2 text-sm text-gray-500">Wird hochgeladen...</div>
-                    </div>
-
-                    <!-- Font Family -->
-                    <div>
-                        <label for="body_font_family" class="block text-sm font-medium text-gray-700">
-                            Schriftart-Name
-                        </label>
-                        <input
-                            wire:model.live="body_font_family"
-                            type="text"
-                            id="body_font_family"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            placeholder="z.B. Fira Sans"
-                        >
-                        @error('body_font_family')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                        <p class="mt-2 text-xs text-gray-500">Der Schriftname wird automatisch aus dem Dateinamen generiert</p>
                     </div>
 
                     <!-- Font Size, Weight, Style -->
@@ -451,16 +403,16 @@
             <div class="bg-white shadow rounded-lg sticky top-6">
                 <div class="px-4 py-5 sm:p-6">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-medium leading-6 text-gray-900">Live-Vorschau</h3>
-                        <a href="{{ route('preview.invoice.pdf') }}" target="_blank" class="text-sm text-indigo-600 hover:text-indigo-900">
-                            Als PDF öffnen →
+                        <h3 class="text-lg font-medium leading-6 text-gray-900">Live-Vorschau (PDF)</h3>
+                        <a href="{{ route('preview.invoice.pdf') }}?v={{ $previewKey }}" target="_blank" class="text-sm text-indigo-600 hover:text-indigo-900">
+                            In neuem Tab öffnen →
                         </a>
                     </div>
 
-                    <!-- Invoice Preview (iframe) -->
-                    <div class="border border-gray-300 rounded-lg bg-white overflow-hidden" style="height: calc(100vh - 200px);">
+                    <!-- Invoice Preview (PDF iframe) -->
+                    <div class="border border-gray-300 rounded-lg bg-gray-100 overflow-hidden" style="height: calc(100vh - 200px);">
                         <iframe
-                            src="{{ route('preview.invoice.html') }}?v={{ $previewKey }}"
+                            src="{{ route('preview.invoice.pdf') }}?v={{ $previewKey }}"
                             class="w-full h-full border-0"
                             wire:key="preview-{{ $previewKey }}"
                         ></iframe>

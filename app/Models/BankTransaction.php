@@ -8,6 +8,8 @@ class BankTransaction extends Model
 {
     protected $fillable = [
         'transaction_date',
+        'month',
+        'year',
         'correspondent',
         'title',
         'description',
@@ -20,12 +22,15 @@ class BankTransaction extends Model
         'currency',
         'original_amount',
         'original_currency',
-        'note',
         'matched_paperless_document_id',
+        'paperless_document_id',
+        'paperless_document_title',
         'bank_statement_id',
         'invoice_id',
         'is_validated',
         'is_business_expense',
+        'is_bewirtung',
+        'bewirtung_data',
         'raw_data',
     ];
 
@@ -38,6 +43,8 @@ class BankTransaction extends Model
         'original_amount' => 'decimal:2',
         'is_validated' => 'boolean',
         'is_business_expense' => 'boolean',
+        'is_bewirtung' => 'boolean',
+        'bewirtung_data' => 'array',
     ];
 
     /**
@@ -103,13 +110,21 @@ class BankTransaction extends Model
             'Geschäftsausgabe 0%' => 'Geschäftsausgabe 0% (international)',
             'Geschäftsausgabe 7%' => 'Geschäftsausgabe 7% MwSt',
             'Geschäftsausgabe 19%' => 'Geschäftsausgabe 19% MwSt',
-            'Bewirtung' => 'Bewirtung (Geschäftsessen)',
+            'Bewirtung' => 'Bewirtung (Geschäftsessen / Restaurant)',
             'Reverse Charge' => 'Reverse Charge (EU B2B)',
             'Einkommen 19%' => 'Einkommen 19% MwSt',
-            'Umsatzsteuerstattung' => 'Umsatzsteuererstattung',
+            'Umsatzsteuererstattung' => 'Umsatzsteuererstattung',
             'Steuerzahlung' => 'Steuerzahlung',
             'Nicht kategorisiert' => 'Nicht kategorisiert',
         ];
+    }
+
+    /**
+     * Check if transaction is Bewirtung (entertainment expense)
+     */
+    public function isBewirtung(): bool
+    {
+        return $this->is_bewirtung || $this->type === 'Bewirtung';
     }
 
     /**

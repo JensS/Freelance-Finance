@@ -15,9 +15,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Styling**: Tailwind CSS 4.0
 - **PDF Generation**: barryvdh/laravel-dompdf (with custom font support)
 - **PDF Parsing**: smalot/pdfparser (for bank statement text extraction)
-- **AI Integration**: Ollama API (configurable via Settings UI or .env)
-  - **Text Models**: gpt-oss, llama3.2, mistral, codellama
-  - **Vision Models**: llama3.2-vision, llava, qwen2-vl, granite-3.2-vision
+- **AI Integration**: Unified via Prism PHP (supports multiple providers)
+  - **Library**: prism-php/prism (https://prismphp.com)
+  - **Supported Providers**: Ollama, OpenAI, Anthropic, OpenRouter, Mistral, Groq, xAI, Gemini, DeepSeek
+  - **Recommended Text Model (Ollama)**: gpt-oss:20b (supports thinking mode)
+  - **Recommended Vision Model (Ollama)**: qwen2.5vl:3b (optimized for document extraction)
+  - **Other Text Models**: llama3.2, mistral, codellama, qwen3, deepseek-r1
+  - **Other Vision Models**: llama3.2-vision, llava, qwen2-vl, granite-3.2-vision
+  - **Configuration**: Settings UI or .env via Prism config
 - **Queue**: Database queue (Redis optional)
 
 ## Development Commands
@@ -118,7 +123,7 @@ The system parses Kontist bank statements (see `/sample-documents/`). Key fields
 - **Correspondent**: Merchant/company name (first line of BUCHUNGSTEXT)
 - **Type**: Pre-categorized by Kontist as:
   - `Geschäftsausgabe 0%` (business expense, 0% VAT - international services)
-  - `Geschäftsausgabe 7%` (business expense, 7% VAT - reduced rate)
+  - `Geschäftsausgabe 7%` (business expense, 7% VAT - reduced rate, includes restaurants/meals)
   - `Geschäftsausgabe 19%` (business expense, 19% VAT - standard rate)
   - `Einkommen 19%` (income with 19% VAT)
   - `Reverse Charge` (reverse charge mechanism for EU services)
@@ -126,6 +131,8 @@ The system parses Kontist bank statements (see `/sample-documents/`). Key fields
   - `Umsatzsteuerstattung` (VAT refund)
   - `Steuerzahlung` (tax payment)
   - `Nicht kategorisiert` (not categorized)
+
+**Note**: Restaurant and meal expenses (Bewirtung) are classified as `Geschäftsausgabe 7%` with a `[Bewirtung]` note added to the description for tax advisor reference.
 - **Title**: Additional transaction details/reference
 - **Amount**: Negative for expenses, positive for income (EUR)
 
@@ -304,28 +311,36 @@ The system uses Ollama vision models to automatically extract data from PDF rece
 
 ### Supported Vision Models
 
-**Recommended Models:**
-1. **LLaVA** (`llava`)
+**Recommended Model:**
+1. **Qwen 2.5 VL 3B** (`qwen2.5vl:3b`) ⭐ **RECOMMENDED**
+   - Latest Qwen vision-language model, optimized for document understanding
+   - Excellent OCR and structured data extraction
+   - Fast inference with 3B parameter size
+   - Best for receipt, invoice, and quote extraction
+   - Install: `ollama pull qwen2.5vl:3b`
+
+**Alternative Models:**
+2. **LLaVA** (`llava`)
    - Popular, high-performance vision model
    - Good for general-purpose visual and language understanding
    - Install: `ollama pull llava`
 
-2. **Llama 3.2-Vision** (`llama3.2-vision`)
+3. **Llama 3.2-Vision** (`llama3.2-vision`)
    - Meta's latest vision capabilities
    - Optimized for image reasoning and captioning
    - Install: `ollama pull llama3.2-vision`
 
-3. **Qwen-VL** (`qwen2-vl`)
+4. **Qwen-VL** (`qwen2-vl`)
    - Powerful vision-language model from Qwen family
    - Strong visual reasoning capabilities
    - Install: `ollama pull qwen2-vl`
 
-4. **Granite-3.2-Vision** (`granite-3.2-vision`)
+5. **Granite-3.2-Vision** (`granite-3.2-vision`)
    - Excellent for OCR and document interpretation
    - Lower RAM requirements
    - Install: `ollama pull granite-3.2-vision`
 
-5. **MiniCPM-V** (`minicpm-v`)
+6. **MiniCPM-V** (`minicpm-v`)
    - Compact model with good performance
    - Runs efficiently on single GPU
    - Install: `ollama pull minicpm-v`
@@ -346,6 +361,61 @@ The system automatically categorizes installed models into text and vision types
 4. Sends to Ollama with structured JSON prompt
 5. Extracts: date, merchant, amounts (gross/net/VAT), description, transaction type
 6. Populates form fields for user review
+
+## AI Text Models & Thinking Mode
+
+### Recommended Text Model
+
+**GPT-OSS 20B** (`gpt-oss:20b`) ⭐ **RECOMMENDED**
+- Open-source reasoning model optimized for financial analysis
+- Supports "thinking mode" with three levels: low, medium (default), high
+- Excellent for complex financial analysis and tax optimization suggestions
+- ~11 GB download
+- Install: `ollama pull gpt-oss:20b`
+
+### Thinking Mode
+
+The system automatically enables "thinking mode" for text model prompts when supported:
+
+**How it works:**
+- Most models use `"think": true` for enhanced reasoning
+- GPT-OSS requires `"think": "low"/"medium"/"high"` (default: "medium")
+- Thinking mode is enabled by default in `OllamaService::generate()`
+- Can be disabled by passing `enableThinking: false`
+
+**Supported Models:**
+- **gpt-oss** (requires "low"/"medium"/"high")
+- **qwen**, **qwen2**, **qwen3**, **qwq** (boolean)
+- **llama3.x** (boolean)
+- **mistral** variants (boolean)
+- **deepseek-r1** (boolean)
+- **gemma** variants (boolean)
+
+**Example API Request:**
+```json
+{
+  "model": "gpt-oss:20b",
+  "prompt": "Analyze this month's expenses...",
+  "think": "medium",
+  "stream": false
+}
+```
+
+**Benefits:**
+- Improved reasoning quality for financial analysis
+- Better tax optimization suggestions
+- More accurate transaction categorization
+- Enhanced anomaly detection
+
+### Model Installation UI
+
+The Settings page (Integrationen → Ollama) automatically detects missing recommended models and shows:
+- Warning card with model name
+- One-click install button
+- Progress indicator during download
+- Automatic model selection after installation
+
+Users can click "Installieren" to pull the recommended models without terminal access.
 
 ## Authentication & Authorization
 

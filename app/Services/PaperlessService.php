@@ -178,6 +178,74 @@ class PaperlessService
     }
 
     /**
+     * Search documents by date range and optional tag
+     *
+     * @param  string  $startDate  Start date (YYYY-MM-DD)
+     * @param  string  $endDate  End date (YYYY-MM-DD)
+     * @param  string|null  $tag  Optional tag name to filter
+     * @return array Array of documents
+     */
+    public function searchDocumentsByDateRange(string $startDate, string $endDate, ?string $tag = null): array
+    {
+        if (empty($this->apiToken) || empty($this->baseUrl)) {
+            Log::warning('Paperless search skipped: API not configured');
+
+            return [];
+        }
+
+        try {
+            $params = [
+                'created__date__gte' => $startDate,
+                'created__date__lte' => $endDate,
+            ];
+
+            // Get storage path from settings
+            $storagePathId = \App\Models\Setting::get('paperless_storage_path');
+            if ($storagePathId) {
+                $params['storage_path__id'] = $storagePathId;
+            }
+
+            // Add tag filter if specified
+            if ($tag) {
+                $tagId = $this->getTagIdByName($tag);
+                if ($tagId) {
+                    $params['tags__id__all'] = $tagId;
+                }
+            }
+
+            $response = $this->client()->get($this->baseUrl.'/api/documents/', $params);
+
+            if ($response->successful()) {
+                $documents = $response->json('results', []);
+
+                // Fetch all correspondents once to avoid N+1 HTTP requests
+                $correspondents = $this->getCorrespondents();
+                $correspondentMap = collect($correspondents)->keyBy('id')->map(fn ($c) => $c['name'])->toArray();
+
+                // Enrich with correspondent names using the lookup map
+                return collect($documents)->map(function ($doc) use ($correspondentMap) {
+                    if (! empty($doc['correspondent'])) {
+                        $doc['correspondent_name'] = $correspondentMap[$doc['correspondent']] ?? null;
+                    }
+
+                    return $doc;
+                })->toArray();
+            }
+
+            Log::error('Paperless date range search failed', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            return [];
+        } catch (\Exception $e) {
+            Log::error('Paperless date range search exception', ['error' => $e->getMessage()]);
+
+            return [];
+        }
+    }
+
+    /**
      * Get a specific document by ID
      *
      * @param  int  $documentId  Document ID in Paperless
@@ -325,6 +393,86 @@ class PaperlessService
 
             return [];
         }
+    }
+
+    /**
+     * Get a specific correspondent by ID
+     *
+     * @param  int  $correspondentId  Correspondent ID in Paperless
+     * @return array|null Correspondent data or null on failure
+     */
+    public function getCorrespondent(int $correspondentId): ?array
+    {
+        try {
+            $response = $this->client()->get($this->baseUrl.'/api/correspondents/'.$correspondentId.'/');
+
+            if ($response->successful()) {
+                return $response->json();
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            Log::error('Paperless get correspondent exception', ['error' => $e->getMessage()]);
+
+            return null;
+        }
+    }
+
+    /**
+     * Get correspondent names for AI prompts (excluding own company)
+     *
+     * @return array List of correspondent names
+     */
+    public function getCorrespondentNamesForAI(): array
+    {
+        try {
+            $correspondents = $this->getCorrespondents();
+
+            // Get company name from settings to filter it out
+            $companyName = \App\Models\Setting::get('company_name');
+
+            // Extract names and filter out own company name
+            $names = collect($correspondents)
+                ->pluck('name')
+                ->filter(fn ($name) => ! $this->isSameCompany($name, $companyName))
+                ->values()
+                ->toArray();
+
+            return $names;
+        } catch (\Exception $e) {
+            Log::warning('Failed to fetch correspondent names for AI', ['error' => $e->getMessage()]);
+
+            return [];
+        }
+    }
+
+    /**
+     * Check if correspondent name matches company name (case-insensitive, fuzzy)
+     *
+     * @param  string  $correspondentName  Correspondent name to check
+     * @param  string|null  $companyName  Company name from settings
+     * @return bool True if names match
+     */
+    private function isSameCompany(?string $correspondentName, ?string $companyName): bool
+    {
+        if (empty($correspondentName) || empty($companyName)) {
+            return false;
+        }
+
+        // Exact match (case-insensitive)
+        if (strcasecmp($correspondentName, $companyName) === 0) {
+            return true;
+        }
+
+        // Check if one contains the other (e.g., "Jens Sage" matches "Jens Sage GmbH")
+        $cleanCorrespondent = strtolower(trim($correspondentName));
+        $cleanCompany = strtolower(trim($companyName));
+
+        if (str_contains($cleanCorrespondent, $cleanCompany) || str_contains($cleanCompany, $cleanCorrespondent)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -554,5 +702,90 @@ class PaperlessService
         }
 
         return null;
+    }
+
+    /**
+     * Advanced search for documents across multiple fields
+     *
+     * @param  string  $query  Search query (can be title, date, content)
+     * @param  bool  $includeContent  Include content field in results
+     * @param  array  $filters  Additional filters
+     * @return array Search results with correspondent names
+     */
+    public function searchDocumentsAdvanced(string $query, bool $includeContent = false, array $filters = []): array
+    {
+        if (empty($this->apiToken) || empty($this->baseUrl)) {
+            Log::warning('Paperless advanced search skipped: API not configured');
+
+            return [];
+        }
+
+        try {
+            // Build query parameters
+            $params = [
+                'query' => $query,
+                'page_size' => $filters['page_size'] ?? 50,
+            ];
+
+            // Get storage path from settings if not provided in filters
+            if (! isset($filters['storage_path_id'])) {
+                $storagePathId = \App\Models\Setting::get('paperless_storage_path');
+                if ($storagePathId) {
+                    $params['storage_path__id'] = $storagePathId;
+                }
+            }
+
+            // Add additional filters
+            if (isset($filters['tags'])) {
+                $params['tags__id__all'] = $filters['tags'];
+            }
+
+            if (isset($filters['correspondent_id'])) {
+                $params['correspondent__id'] = $filters['correspondent_id'];
+            }
+
+            if (isset($filters['document_type_id'])) {
+                $params['document_type__id'] = $filters['document_type_id'];
+            }
+
+            // Make the search request
+            $response = $this->client()->get($this->baseUrl.'/api/documents/', $params);
+
+            if (! $response->successful()) {
+                Log::error('Paperless advanced search failed', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                return [];
+            }
+
+            $documents = $response->json('results', []);
+
+            // Fetch all correspondents once to avoid N+1
+            $correspondents = $this->getCorrespondents();
+            $correspondentMap = collect($correspondents)->keyBy('id')->map(fn ($c) => $c['name'])->toArray();
+
+            // Enrich documents with correspondent names
+            $enrichedDocuments = collect($documents)->map(function ($doc) use ($correspondentMap, $includeContent) {
+                if (! empty($doc['correspondent'])) {
+                    $doc['correspondent_name'] = $correspondentMap[$doc['correspondent']] ?? null;
+                }
+
+                // Optionally exclude content field to reduce payload size
+                if (! $includeContent) {
+                    unset($doc['content']);
+                }
+
+                return $doc;
+            })->toArray();
+
+            return $enrichedDocuments;
+
+        } catch (\Exception $e) {
+            Log::error('Paperless advanced search exception', ['error' => $e->getMessage()]);
+
+            return [];
+        }
     }
 }

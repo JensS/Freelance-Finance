@@ -6,7 +6,7 @@ use App\Models\BankTransaction;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Quote;
-use App\Services\OllamaService;
+use App\Services\AIService;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -24,7 +24,7 @@ class Dashboard extends Component
         $this->loadingInsights = true;
 
         try {
-            $ollama = app(OllamaService::class);
+            $aiService = app(AIService::class);
 
             // Gather financial data for current month
             $currentMonth = now();
@@ -60,10 +60,26 @@ class Dashboard extends Component
                 'savings_rate' => $revenue > 0 ? number_format((($revenue + $expenses) / $revenue) * 100, 1) : 0,
             ];
 
-            $this->aiInsights = $ollama->analyzeMonthlyFinances($data);
+            // Build analysis prompt
+            $prompt = "Analysiere die folgenden monatlichen Finanzdaten eines Freelancers und gib professionelle Insights:\n\n";
+            $prompt .= "Umsatz: €{$data['revenue']}\n";
+            $prompt .= "Gesamtausgaben: €{$data['expenses']}\n";
+            $prompt .= "Geschäftsausgaben: €{$data['business_expenses']}\n";
+            $prompt .= "Privatausgaben: €{$data['personal_expenses']}\n";
+            $prompt .= "Rechnungen bezahlt: {$data['invoices_paid']}\n";
+            $prompt .= "Durchschnittliche Rechnung: €{$data['avg_invoice']}\n";
+            $prompt .= "Gewinnmarge: {$data['profit_margin']}%\n";
+            $prompt .= "Sparquote: {$data['savings_rate']}%\n\n";
+            $prompt .= "Bitte gib eine kurze Analyse (3-4 Sätze) mit:\n";
+            $prompt .= "1. Bewertung der finanziellen Situation\n";
+            $prompt .= "2. Auffälligkeiten oder Trends\n";
+            $prompt .= "3. Konkrete Handlungsempfehlungen\n";
+            $prompt .= "\nAntworte auf Deutsch und in einem professionellen, hilfreichen Ton.";
+
+            $this->aiInsights = $aiService->generateText($prompt, ['temperature' => 0.7]);
 
             if (! $this->aiInsights) {
-                $this->aiInsights = 'KI-Analyse konnte nicht generiert werden. Bitte überprüfen Sie die Ollama-Konfiguration.';
+                $this->aiInsights = 'KI-Analyse konnte nicht generiert werden. Bitte überprüfen Sie die AI-Konfiguration.';
             }
 
         } catch (\Exception $e) {

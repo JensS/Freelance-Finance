@@ -83,17 +83,57 @@
                                     >
                                 </div>
 
-                                <!-- Correspondent -->
-                                <div>
+                                <!-- Correspondent with Autocomplete -->
+                                <div x-data="{
+                                    showSuggestions: false,
+                                    suggestions: @js($correspondentSuggestions),
+                                    get filteredSuggestions() {
+                                        const correspondent = $wire.correspondent || '';
+                                        if (!correspondent || correspondent.length < 2) {
+                                            return [];
+                                        }
+                                        const query = correspondent.toLowerCase();
+                                        return this.suggestions.filter(s =>
+                                            s.toLowerCase().includes(query)
+                                        ).slice(0, 10);
+                                    },
+                                    selectSuggestion(suggestion) {
+                                        $wire.correspondent = suggestion;
+                                        this.showSuggestions = false;
+                                    }
+                                }"
+                                class="relative"
+                                @click.away="showSuggestions = false">
                                     <label for="correspondent" class="block text-sm font-medium text-gray-700">
                                         Korrespondent / Händler
                                     </label>
                                     <input
-                                        wire:model="correspondent"
+                                        wire:model.live="correspondent"
                                         type="text"
                                         id="correspondent"
+                                        @focus="showSuggestions = true"
+                                        @input="showSuggestions = true"
+                                        autocomplete="off"
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                     >
+
+                                    <!-- Autocomplete Dropdown -->
+                                    <div x-show="showSuggestions && filteredSuggestions.length > 0"
+                                         x-transition:enter="transition ease-out duration-100"
+                                         x-transition:enter-start="transform opacity-0 scale-95"
+                                         x-transition:enter-end="transform opacity-100 scale-100"
+                                         x-transition:leave="transition ease-in duration-75"
+                                         x-transition:leave-start="transform opacity-100 scale-100"
+                                         x-transition:leave-end="transform opacity-0 scale-95"
+                                         class="absolute z-50 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+                                        <template x-for="suggestion in filteredSuggestions" :key="suggestion">
+                                            <div @click="selectSuggestion(suggestion)"
+                                                 class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-indigo-50 hover:text-indigo-900">
+                                                <span class="block truncate" x-text="suggestion"></span>
+                                            </div>
+                                        </template>
+                                    </div>
+
                                     @error('correspondent')
                                         <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
@@ -150,23 +190,27 @@
                                     <h4 class="text-base font-medium text-gray-900 mb-4">Beträge</h4>
 
                                     <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                                        <!-- Gross Amount -->
+                                        <!-- Gross Amount (Calculated) -->
                                         <div>
                                             <label for="amount" class="block text-sm font-medium text-gray-700">
-                                                Bruttobetrag <span class="text-red-500">*</span>
+                                                Bruttobetrag (berechnet) <span class="text-red-500">*</span>
                                             </label>
                                             <div class="mt-1 relative rounded-md shadow-sm">
                                                 <input
-                                                    wire:model.live="amount"
+                                                    wire:model="amount"
                                                     type="number"
                                                     step="0.01"
                                                     id="amount"
-                                                    class="block w-full rounded-md border-gray-300 pr-12 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                                    readonly
+                                                    class="block w-full rounded-md border-gray-300 bg-gray-50 pr-12 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                                 >
                                                 <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                                                     <span class="text-gray-500 sm:text-sm">EUR</span>
                                                 </div>
                                             </div>
+                                            <p class="mt-1 text-xs text-gray-500">
+                                                Wird automatisch aus Nettobetrag + MwSt. berechnet
+                                            </p>
                                             @error('amount')
                                                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                                             @enderror
@@ -179,17 +223,19 @@
                                             </label>
                                             <div class="mt-1 relative rounded-md shadow-sm">
                                                 <input
-                                                    wire:model="vat_rate"
+                                                    wire:model.live="vat_rate"
                                                     type="number"
                                                     step="0.01"
                                                     id="vat_rate"
-                                                    readonly
-                                                    class="block w-full rounded-md border-gray-300 bg-gray-50 pr-12 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                                    class="block w-full rounded-md border-gray-300 pr-12 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                                 >
                                                 <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                                                     <span class="text-gray-500 sm:text-sm">%</span>
                                                 </div>
                                             </div>
+                                            <p class="mt-1 text-xs text-gray-500">
+                                                Wird automatisch aus Transaktionstyp ermittelt, kann angepasst werden
+                                            </p>
                                             @error('vat_rate')
                                                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                                             @enderror
@@ -242,27 +288,92 @@
                                     </div>
 
                                     <p class="mt-3 text-xs text-gray-500">
-                                        <strong>Hinweis:</strong> Der MwSt.-Satz wird automatisch aus dem Transaktionstyp ermittelt.
-                                        Sie können den Nettobetrag manuell anpassen, wenn die automatische Berechnung nicht korrekt ist.
+                                        <strong>Hinweis:</strong> Passen Sie den Nettobetrag an - der Bruttobetrag wird automatisch berechnet.
+                                        Der MwSt.-Satz wird aus dem Transaktionstyp ermittelt und kann bei Bedarf angepasst werden.
                                     </p>
                                 </div>
 
-                                <!-- Notes -->
-                                <div>
-                                    <label for="note" class="block text-sm font-medium text-gray-700">
-                                        Notizen
-                                    </label>
-                                    <textarea
-                                        wire:model="note"
-                                        id="note"
-                                        rows="3"
-                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                        placeholder="Zusätzliche Informationen zur Transaktion..."
-                                    ></textarea>
-                                    @error('note')
-                                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
+                                <!-- Bewirtung Section (only shown when is_bewirtung is true) -->
+                                @if($is_bewirtung || $type === 'Bewirtung')
+                                    <div class="border-t border-gray-200 pt-4">
+                                        <div class="bg-amber-50 border border-amber-200 rounded-md p-4 mb-4">
+                                            <div class="flex">
+                                                <svg class="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                                                </svg>
+                                                <div class="ml-3">
+                                                    <h3 class="text-sm font-medium text-amber-800">Bewirtungsbeleg</h3>
+                                                    <div class="mt-1 text-xs text-amber-700">
+                                                        Für Bewirtungsbelege sind laut Finanzamt folgende Angaben erforderlich:
+                                                        <ul class="list-disc ml-5 mt-1">
+                                                            <li>Namen der bewirteten Personen</li>
+                                                            <li>Betrieblicher Anlass (möglichst genau, allgemeine Angaben wie "Arbeitsgespräch" genügen nicht)</li>
+                                                            <li>Ort der Bewirtung (Restaurant/Lokal)</li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <h4 class="text-base font-medium text-gray-900 mb-4">Bewirtungsdetails</h4>
+
+                                        <div class="grid grid-cols-1 gap-6">
+                                            <!-- Bewirtete Person -->
+                                            <div>
+                                                <label for="bewirtete_person" class="block text-sm font-medium text-gray-700">
+                                                    Bewirtete Person(en)
+                                                </label>
+                                                <input
+                                                    wire:model="bewirtete_person"
+                                                    type="text"
+                                                    id="bewirtete_person"
+                                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                                    placeholder="z.B. Max Mustermann, Geschäftsführer Firma XY"
+                                                >
+                                                @error('bewirtete_person')
+                                                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                                                @enderror
+                                            </div>
+
+                                            <!-- Anlass -->
+                                            <div>
+                                                <label for="anlass" class="block text-sm font-medium text-gray-700">
+                                                    Betrieblicher Anlass <span class="text-red-500">*</span>
+                                                </label>
+                                                <textarea
+                                                    wire:model="anlass"
+                                                    id="anlass"
+                                                    rows="2"
+                                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                                    placeholder="Seien Sie spezifisch! Beispiel: 'Projektbesprechung Website-Redesign für Kunde ABC' statt nur 'Arbeitsgespräch'"
+                                                ></textarea>
+                                                <p class="mt-1 text-xs text-gray-500">
+                                                    Wichtig: Allgemeine Angaben wie "Arbeitsgespräch" sind nicht ausreichend. Beschreiben Sie den konkreten Anlass.
+                                                </p>
+                                                @error('anlass')
+                                                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                                                @enderror
+                                            </div>
+
+                                            <!-- Ort -->
+                                            <div>
+                                                <label for="ort" class="block text-sm font-medium text-gray-700">
+                                                    Ort
+                                                </label>
+                                                <input
+                                                    wire:model="ort"
+                                                    type="text"
+                                                    id="ort"
+                                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                                    placeholder="z.B. Restaurant Maximilians, Berlin"
+                                                >
+                                                @error('ort')
+                                                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                                                @enderror
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     </div>

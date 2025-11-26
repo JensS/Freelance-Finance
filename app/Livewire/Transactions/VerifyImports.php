@@ -33,7 +33,13 @@ class VerifyImports extends Component
 
     public $vat_amount;
 
-    public $note;
+    public $is_bewirtung = false;
+
+    public $bewirtete_person;
+
+    public $anlass;
+
+    public $ort;
 
     public $transactionTypes = [];
 
@@ -51,10 +57,24 @@ class VerifyImports extends Component
 
     public $paperlessDocumentTitle = null;
 
+    public $correspondentSuggestions = [];
+
     public function mount()
     {
         $this->transactionTypes = BankTransaction::getTransactionTypes();
+        $this->loadCorrespondentSuggestions();
         $this->loadNextTransaction();
+    }
+
+    public function loadCorrespondentSuggestions()
+    {
+        try {
+            $paperlessService = app(\App\Services\PaperlessService::class);
+            $this->correspondentSuggestions = $paperlessService->getCorrespondentNamesForAI();
+        } catch (\Exception $e) {
+            \Log::warning('Failed to load correspondent suggestions', ['error' => $e->getMessage()]);
+            $this->correspondentSuggestions = [];
+        }
     }
 
     public function loadNextTransaction()
@@ -90,7 +110,13 @@ class VerifyImports extends Component
         $this->description = $this->currentTransaction->description;
         $this->type = $this->currentTransaction->type;
         $this->amount = $this->currentTransaction->amount;
-        $this->note = $this->currentTransaction->note;
+
+        // Load Bewirtung data
+        $this->is_bewirtung = $this->currentTransaction->is_bewirtung;
+        $bewirtungData = $this->currentTransaction->bewirtung_data ?? [];
+        $this->bewirtete_person = $bewirtungData['bewirtete_person'] ?? null;
+        $this->anlass = $bewirtungData['anlass'] ?? null;
+        $this->ort = $bewirtungData['ort'] ?? null;
 
         // Calculate net/gross if not already set
         if ($this->currentTransaction->net_amount === null) {
@@ -139,30 +165,18 @@ class VerifyImports extends Component
 
     public function updatedType()
     {
-        // Recalculate net/gross when type changes
-        $this->recalculateAmounts();
+        // Auto-set is_bewirtung when Bewirtung type is selected
+        $this->is_bewirtung = $this->type === 'Bewirtung';
+
+        // Extract and set VAT rate from type
+        $this->extractVatRateFromType();
+
+        // Recalculate gross from net when type changes
+        $this->recalculateFromNet();
     }
 
-    public function updatedAmount()
+    private function extractVatRateFromType()
     {
-        // Recalculate net/gross when amount changes
-        $this->recalculateAmounts();
-    }
-
-    public function updatedNetAmount()
-    {
-        // Recalculate VAT amount when net amount changes
-        if ($this->net_amount !== null && $this->amount !== null) {
-            $this->vat_amount = round($this->amount - $this->net_amount, 2);
-        }
-    }
-
-    private function recalculateAmounts()
-    {
-        if ($this->amount === null) {
-            return;
-        }
-
         // Extract VAT rate from type
         $vatRate = 0;
         if (str_contains($this->type, '0%')) {
@@ -171,50 +185,126 @@ class VerifyImports extends Component
             $vatRate = 7;
         } elseif (str_contains($this->type, '19%')) {
             $vatRate = 19;
+        } elseif ($this->type === 'Bewirtung') {
+            $vatRate = 7; // Bewirtung uses 7% VAT
         } elseif (str_contains($this->type, 'Reverse Charge')) {
             $vatRate = 0;
         }
 
         $this->vat_rate = $vatRate;
+    }
+
+    public function updatedAmount()
+    {
+        // When gross amount is set (e.g., from AI extraction), calculate net
+        // This is a one-time calculation, user edits net afterwards
+        if ($this->amount !== null && $this->vat_rate !== null) {
+            $this->recalculateNetFromGross();
+        }
+    }
+
+    private function recalculateNetFromGross()
+    {
+        if ($this->amount === null) {
+            return;
+        }
+
+        $amount = (float) $this->amount;
+        $vatRate = (float) $this->vat_rate;
 
         // Calculate net amount (reverse calculation from gross)
         if ($vatRate > 0) {
-            $this->net_amount = round($this->amount / (1 + ($vatRate / 100)), 2);
+            $this->net_amount = round($amount / (1 + ($vatRate / 100)), 2);
         } else {
-            $this->net_amount = $this->amount;
+            $this->net_amount = $amount;
         }
 
         // Calculate VAT amount
-        $this->vat_amount = round($this->amount - $this->net_amount, 2);
+        $this->vat_amount = round($amount - (float) $this->net_amount, 2);
+    }
+
+    public function updatedNetAmount()
+    {
+        // Recalculate gross amount and VAT amount when net amount changes
+        if ($this->net_amount !== null && $this->vat_rate !== null) {
+            $netAmount = (float) $this->net_amount;
+            $vatRate = (float) $this->vat_rate;
+
+            // Calculate VAT amount
+            $this->vat_amount = round($netAmount * ($vatRate / 100), 2);
+
+            // Calculate gross amount
+            $this->amount = round($netAmount + $this->vat_amount, 2);
+        }
+    }
+
+    public function updatedVatRate()
+    {
+        // Recalculate amounts when VAT rate changes
+        $this->recalculateFromNet();
+    }
+
+    private function recalculateFromNet()
+    {
+        // Calculate gross and VAT from net amount
+        if ($this->net_amount !== null && $this->vat_rate !== null) {
+            $netAmount = (float) $this->net_amount;
+            $vatRate = (float) $this->vat_rate;
+
+            // Calculate VAT amount
+            $this->vat_amount = round($netAmount * ($vatRate / 100), 2);
+
+            // Calculate gross amount
+            $this->amount = round($netAmount + $this->vat_amount, 2);
+        }
     }
 
     public function approve()
     {
-        $this->validate([
+        $rules = [
             'type' => 'required|string',
             'amount' => 'required|numeric',
             'net_amount' => 'required|numeric',
             'vat_rate' => 'required|numeric|min:0|max:100',
             'vat_amount' => 'required|numeric',
             'correspondent' => 'required|string|max:255',
-            'note' => 'nullable|string',
-        ]);
+        ];
+
+        // Add Bewirtung validation when is_bewirtung is true
+        if ($this->is_bewirtung) {
+            $rules['anlass'] = 'required|string|max:500';
+            $rules['ort'] = 'nullable|string|max:255';
+            $rules['bewirtete_person'] = 'nullable|string|max:255';
+        }
+
+        $this->validate($rules);
 
         if (! $this->currentTransaction) {
             return;
         }
 
-        // Update transaction
+        // Prepare Bewirtung data
+        $bewirtungData = null;
+        if ($this->is_bewirtung) {
+            $bewirtungData = [
+                'bewirtete_person' => $this->bewirtete_person,
+                'anlass' => $this->anlass,
+                'ort' => $this->ort,
+            ];
+        }
+
+        // Update transaction (cast numeric values to ensure proper types)
         $this->currentTransaction->update([
             'type' => $this->type,
-            'amount' => $this->amount,
-            'net_amount' => $this->net_amount,
-            'vat_rate' => $this->vat_rate,
-            'vat_amount' => $this->vat_amount,
+            'amount' => (float) $this->amount,
+            'net_amount' => (float) $this->net_amount,
+            'vat_rate' => (float) $this->vat_rate,
+            'vat_amount' => (float) $this->vat_amount,
             'correspondent' => $this->correspondent,
             'title' => $this->title,
             'description' => $this->description,
-            'note' => $this->note,
+            'is_bewirtung' => $this->is_bewirtung,
+            'bewirtung_data' => $bewirtungData,
             'is_validated' => true,
             'is_business_expense' => ! str_contains($this->type, 'Privat'),
         ]);
@@ -267,7 +357,15 @@ class VerifyImports extends Component
             unlink($tempFile);
 
             if (! $extractedData) {
-                $this->aiError = 'AI konnte keine Daten aus dem Dokument extrahieren. Bitte manuell ausfüllen.';
+                // Get specific error message from service
+                $errorMessage = $visionService->getLastError();
+
+                if ($errorMessage) {
+                    $this->aiError = $errorMessage;
+                } else {
+                    $this->aiError = 'AI konnte keine Daten aus dem Dokument extrahieren. Bitte manuell ausfüllen.';
+                }
+
                 $this->aiExtracting = false;
 
                 return;
@@ -282,24 +380,74 @@ class VerifyImports extends Component
                 $this->description = $extractedData['description'];
             }
 
-            if (isset($extractedData['type'])) {
-                $this->type = $extractedData['type'];
+            // Extract gross amount and VAT rate - calculate net from these
+            // Receipts show TOTAL amount (gross), we calculate net
+            $grossAmount = isset($extractedData['amount_gross']) ? abs((float) $extractedData['amount_gross']) : null;
+            $vatRate = isset($extractedData['vat_rate']) ? abs((float) $extractedData['vat_rate']) : null;
+
+            if ($grossAmount !== null && $vatRate !== null) {
+                // Calculate net from gross (source of truth on receipt)
+                if ($vatRate > 0) {
+                    $calculatedNet = round($grossAmount / (1 + ($vatRate / 100)), 2);
+                } else {
+                    $calculatedNet = $grossAmount;
+                }
+
+                \Log::info('AI extraction: calculated net from gross', [
+                    'gross' => $grossAmount,
+                    'vat_rate' => $vatRate,
+                    'calculated_net' => $calculatedNet,
+                ]);
+
+                // Set net and VAT rate - reactive properties will calculate gross and VAT amount
+                $this->net_amount = $calculatedNet;
+                $this->vat_rate = $vatRate;
+
+                // updatedNetAmount() will automatically calculate:
+                // - vat_amount = net * (vat_rate / 100)
+                // - amount (gross) = net + vat_amount
+            } elseif ($grossAmount !== null) {
+                // Only gross provided, assume 19% VAT
+                $calculatedNet = round($grossAmount / 1.19, 2);
+                $this->net_amount = $calculatedNet;
+                $this->vat_rate = 19;
+            } elseif ($vatRate !== null) {
+                // Only VAT rate provided
+                $this->vat_rate = $vatRate;
             }
 
-            if (isset($extractedData['amount'])) {
-                $this->amount = $extractedData['amount'];
+            // Handle Bewirtung data from AI first (affects transaction type)
+            if (isset($extractedData['is_bewirtung']) && $extractedData['is_bewirtung']) {
+                $this->is_bewirtung = true;
+                $this->bewirtete_person = $extractedData['bewirtete_person'] ?? null;
+                $this->anlass = $extractedData['anlass'] ?? null;
+                $this->ort = $extractedData['ort'] ?? null;
             }
 
-            if (isset($extractedData['net_amount'])) {
-                $this->net_amount = $extractedData['net_amount'];
-            }
-
-            if (isset($extractedData['vat_rate'])) {
-                $this->vat_rate = $extractedData['vat_rate'];
-            }
-
-            if (isset($extractedData['vat_amount'])) {
-                $this->vat_amount = $extractedData['vat_amount'];
+            // Set transaction type - prioritize AI's suggestion, then Bewirtung, fallback to VAT rate
+            if (isset($extractedData['transaction_type']) && ! empty($extractedData['transaction_type'])) {
+                $this->type = $extractedData['transaction_type'];
+            } elseif ($this->is_bewirtung) {
+                // If AI detected Bewirtung but didn't set transaction type
+                $this->type = 'Bewirtung';
+            } elseif ($this->vat_rate !== null) {
+                // Auto-set transaction type based on VAT rate if AI didn't provide one
+                $vatRateInt = (int) round($this->vat_rate);
+                switch ($vatRateInt) {
+                    case 0:
+                        $this->type = 'Geschäftsausgabe 0%';
+                        break;
+                    case 7:
+                        $this->type = 'Geschäftsausgabe 7%';
+                        break;
+                    case 19:
+                        $this->type = 'Geschäftsausgabe 19%';
+                        break;
+                    default:
+                        // Fallback to 19% for unexpected rates
+                        $this->type = 'Geschäftsausgabe 19%';
+                        break;
+                }
             }
 
             $this->success = 'Daten wurden erfolgreich von AI extrahiert! Bitte überprüfen Sie die Werte.';
@@ -328,7 +476,10 @@ class VerifyImports extends Component
         $this->net_amount = null;
         $this->vat_rate = null;
         $this->vat_amount = null;
-        $this->note = null;
+        $this->is_bewirtung = false;
+        $this->bewirtete_person = null;
+        $this->anlass = null;
+        $this->ort = null;
     }
 
     public function render()

@@ -40,7 +40,7 @@ class InvoiceImporterTest extends TestCase
         $result = $this->parser->parseDocument($pdfPath);
 
         // Assert no errors
-        $this->assertArrayNotHasKey('error', $result, "Parser returned error: ".($result['error'] ?? ''));
+        $this->assertArrayNotHasKey('error', $result, 'Parser returned error: '.($result['error'] ?? ''));
 
         // Assert document type is correct
         $this->assertEquals('invoice', $result['type'], 'Document should be detected as invoice');

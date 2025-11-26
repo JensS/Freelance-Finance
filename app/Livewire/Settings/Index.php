@@ -60,6 +60,23 @@ class Index extends Component
 
     public bool $installingVisionModel = false;
 
+    public string $installProgress = '';
+
+    public int $installProgressPercent = 0;
+
+    public string $textModelCacheKey = '';
+
+    public string $visionModelCacheKey = '';
+
+    // Recommended models
+    public const RECOMMENDED_TEXT_MODEL = 'gpt-oss:20b';
+
+    public const RECOMMENDED_VISION_MODEL = 'qwen2.5vl:3b';
+
+    public bool $hasRecommendedTextModel = false;
+
+    public bool $hasRecommendedVisionModel = false;
+
     // AI Provider Configuration
     public string $ai_provider = 'ollama'; // ollama, openai, anthropic, openrouter
 
@@ -103,15 +120,26 @@ class Index extends Component
     public function loadOllamaModels()
     {
         try {
-            $ollamaService = app(\App\Services\OllamaService::class);
-            $models = $ollamaService->getAvailableModels();
+            $aiService = app(\App\Services\AIService::class);
+            $models = $aiService->getAvailableModels();
 
             $this->availableTextModels = $models['text'] ?? [];
             $this->availableVisionModels = $models['vision'] ?? [];
+
+            // Check if recommended models are installed
+            $this->hasRecommendedTextModel = collect($this->availableTextModels)
+                ->pluck('name')
+                ->contains(fn ($name) => str_starts_with($name, 'gpt-oss'));
+
+            $this->hasRecommendedVisionModel = collect($this->availableVisionModels)
+                ->pluck('name')
+                ->contains(fn ($name) => str_starts_with($name, 'qwen2.5vl'));
         } catch (\Exception $e) {
             \Log::warning('Failed to load Ollama models', ['error' => $e->getMessage()]);
             $this->availableTextModels = [];
             $this->availableVisionModels = [];
+            $this->hasRecommendedTextModel = false;
+            $this->hasRecommendedVisionModel = false;
         }
     }
 
@@ -125,36 +153,97 @@ class Index extends Component
     {
         $this->installingTextModel = true;
         $this->success = '';
+        $this->installProgress = 'Starte Installation...';
+        $this->installProgressPercent = 0;
 
         try {
-            $ollamaService = app(\App\Services\OllamaService::class);
-            $result = $ollamaService->installModel('gpt-oss:20b');
+            // Generate cache key
+            $this->textModelCacheKey = 'ollama_install_'.str_replace([':', '/'], '_', self::RECOMMENDED_TEXT_MODEL);
 
-            if ($result['success']) {
-                $this->success = 'Text-Modell gpt-oss:20b wird heruntergeladen. Dies kann einige Minuten dauern...';
+            \Log::info('🎬 User initiated text model installation', [
+                'model' => self::RECOMMENDED_TEXT_MODEL,
+                'cache_key' => $this->textModelCacheKey,
+                'user_id' => auth()->id() ?? 'guest',
+            ]);
 
-                // Refresh models after a short delay
-                sleep(3);
-                $this->loadOllamaModels();
+            // Dispatch job to install model
+            \App\Jobs\InstallOllamaModel::dispatch(self::RECOMMENDED_TEXT_MODEL, $this->textModelCacheKey);
 
-                // Auto-select the newly installed model
-                if (! empty($this->availableTextModels)) {
-                    foreach ($this->availableTextModels as $model) {
-                        if (str_contains($model['name'], 'gpt-oss')) {
-                            $this->ollama_model = $model['name'];
-                            break;
-                        }
+            \Log::info('✅ Job dispatched for text model installation', [
+                'model' => self::RECOMMENDED_TEXT_MODEL,
+                'cache_key' => $this->textModelCacheKey,
+            ]);
+
+            $this->installProgress = 'Installation läuft im Hintergrund...';
+        } catch (\Exception $e) {
+            \Log::error('❌ Failed to dispatch text model installation job', [
+                'model' => self::RECOMMENDED_TEXT_MODEL,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            $this->success = 'Fehler beim Starten: '.$e->getMessage();
+            $this->installingTextModel = false;
+        }
+    }
+
+    public function checkTextModelProgress()
+    {
+        if (! $this->installingTextModel || empty($this->textModelCacheKey)) {
+            return;
+        }
+
+        $aiService = app(\App\Services\AIService::class);
+        $progress = $aiService->getOllamaInstallProgress($this->textModelCacheKey);
+
+        if (! $progress) {
+            \Log::debug('📊 No progress found in cache for text model', [
+                'cache_key' => $this->textModelCacheKey,
+            ]);
+
+            return;
+        }
+
+        \Log::debug('📊 Text model installation progress check', [
+            'cache_key' => $this->textModelCacheKey,
+            'progress' => $progress,
+        ]);
+
+        $this->installProgress = $progress['message'] ?? '';
+        $this->installProgressPercent = $progress['progress'] ?? 0;
+
+        // Check if completed or error
+        if ($progress['status'] === 'success') {
+            \Log::info('✅ Text model installation completed', [
+                'model' => self::RECOMMENDED_TEXT_MODEL,
+                'cache_key' => $this->textModelCacheKey,
+            ]);
+
+            $this->installingTextModel = false;
+            $this->loadOllamaModels();
+
+            // Auto-select the newly installed model
+            if ($this->hasRecommendedTextModel) {
+                foreach ($this->availableTextModels as $model) {
+                    if (str_contains($model['name'], 'gpt-oss')) {
+                        $this->ollama_model = $model['name'];
+                        break;
                     }
                 }
-
-                $this->success = 'Text-Modell gpt-oss:20b wurde erfolgreich installiert!';
-            } else {
-                $this->success = 'Fehler beim Installieren: '.$result['error'];
             }
-        } catch (\Exception $e) {
-            $this->success = 'Fehler beim Installieren: '.$e->getMessage();
-        } finally {
+
+            $this->success = 'Text-Modell '.self::RECOMMENDED_TEXT_MODEL.' wurde erfolgreich installiert!';
+            \Cache::forget($this->textModelCacheKey);
+        } elseif ($progress['status'] === 'error') {
+            \Log::error('❌ Text model installation failed', [
+                'model' => self::RECOMMENDED_TEXT_MODEL,
+                'cache_key' => $this->textModelCacheKey,
+                'error' => $progress['message'] ?? 'Unknown error',
+            ]);
+
             $this->installingTextModel = false;
+            $this->success = $progress['message'];
+            \Cache::forget($this->textModelCacheKey);
         }
     }
 
@@ -162,36 +251,60 @@ class Index extends Component
     {
         $this->installingVisionModel = true;
         $this->success = '';
+        $this->installProgress = 'Starte Installation...';
+        $this->installProgressPercent = 0;
 
         try {
-            $ollamaService = app(\App\Services\OllamaService::class);
-            $result = $ollamaService->installModel('granite-3.2-vision');
+            // Generate cache key
+            $this->visionModelCacheKey = 'ollama_install_'.str_replace([':', '/'], '_', self::RECOMMENDED_VISION_MODEL);
 
-            if ($result['success']) {
-                $this->success = 'Vision-Modell granite-3.2-vision wird heruntergeladen. Dies kann einige Minuten dauern...';
+            // Dispatch job to install model
+            \App\Jobs\InstallOllamaModel::dispatch(self::RECOMMENDED_VISION_MODEL, $this->visionModelCacheKey);
 
-                // Refresh models after a short delay
-                sleep(3);
-                $this->loadOllamaModels();
+            $this->installProgress = 'Installation läuft im Hintergrund...';
+        } catch (\Exception $e) {
+            $this->success = 'Fehler beim Starten: '.$e->getMessage();
+            $this->installingVisionModel = false;
+        }
+    }
 
-                // Auto-select the newly installed model
-                if (! empty($this->availableVisionModels)) {
-                    foreach ($this->availableVisionModels as $model) {
-                        if (str_contains($model['name'], 'granite-3.2-vision')) {
-                            $this->ollama_vision_model = $model['name'];
-                            break;
-                        }
+    public function checkVisionModelProgress()
+    {
+        if (! $this->installingVisionModel || empty($this->visionModelCacheKey)) {
+            return;
+        }
+
+        $aiService = app(\App\Services\AIService::class);
+        $progress = $aiService->getOllamaInstallProgress($this->visionModelCacheKey);
+
+        if (! $progress) {
+            return;
+        }
+
+        $this->installProgress = $progress['message'] ?? '';
+        $this->installProgressPercent = $progress['progress'] ?? 0;
+
+        // Check if completed or error
+        if ($progress['status'] === 'success') {
+            $this->installingVisionModel = false;
+            $this->loadOllamaModels();
+
+            // Auto-select the newly installed model
+            if ($this->hasRecommendedVisionModel) {
+                foreach ($this->availableVisionModels as $model) {
+                    if (str_contains($model['name'], 'qwen2.5vl')) {
+                        $this->ollama_vision_model = $model['name'];
+                        break;
                     }
                 }
-
-                $this->success = 'Vision-Modell granite-3.2-vision wurde erfolgreich installiert!';
-            } else {
-                $this->success = 'Fehler beim Installieren: '.$result['error'];
             }
-        } catch (\Exception $e) {
-            $this->success = 'Fehler beim Installieren: '.$e->getMessage();
-        } finally {
+
+            $this->success = 'Vision-Modell '.self::RECOMMENDED_VISION_MODEL.' wurde erfolgreich installiert!';
+            \Cache::forget($this->visionModelCacheKey);
+        } elseif ($progress['status'] === 'error') {
             $this->installingVisionModel = false;
+            $this->success = $progress['message'];
+            \Cache::forget($this->visionModelCacheKey);
         }
     }
 
@@ -283,7 +396,7 @@ class Index extends Component
 
             'ai_provider' => 'required|in:ollama,openai,anthropic,openrouter',
 
-            'ai_fallback_provider' => 'required|in:none,openai,anthropic,openrouter',
+            'ai_fallback_provider' => 'required|in:none,ollama,openai,anthropic,openrouter',
 
             'openai_api_key' => 'nullable|string|max:255',
 

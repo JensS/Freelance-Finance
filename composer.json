@@ -14,6 +14,8 @@
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
         "livewire/livewire": "^3.6",
+        "opcodesio/log-viewer": "^3.21",
+        "prism-php/prism": "^0.98.0",
         "smalot/pdfparser": "^2.12"
     },
     "require-dev": {

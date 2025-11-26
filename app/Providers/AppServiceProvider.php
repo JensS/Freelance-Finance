@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Setting;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -25,6 +26,11 @@ class AppServiceProvider extends ServiceProvider
             // This can be cached in a real application to avoid DB queries on every request
             $date_format = Setting::get('date_format', 'd.m.Y');
             $view->with('dateFormat', $date_format);
+        });
+
+        // Log Viewer authorization - allow access for authenticated users in debug mode
+        Gate::define('viewLogViewer', function ($user = null) {
+            return config('app.debug') === true;
         });
     }
 }
