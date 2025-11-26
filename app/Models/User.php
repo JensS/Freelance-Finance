@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\Role;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -21,6 +21,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
     ];
 
     /**
@@ -43,6 +44,39 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'role' => Role::class,
         ];
+    }
+
+    /**
+     * Check if the user has a specific role.
+     */
+    public function hasRole(Role $role): bool
+    {
+        return $this->role === $role;
+    }
+
+    /**
+     * Check if user is an Owner (admin).
+     */
+    public function isOwner(): bool
+    {
+        return $this->hasRole(Role::Owner);
+    }
+
+    /**
+     * Check if user is a Tax Accountant.
+     */
+    public function isTaxAccountant(): bool
+    {
+        return $this->hasRole(Role::TaxAccountant);
+    }
+
+    /**
+     * Check if user can access a specific route.
+     */
+    public function canAccessRoute(string $routeName): bool
+    {
+        return $this->role->canAccessRoute($routeName);
     }
 }
