@@ -53,7 +53,10 @@ class User extends Authenticatable
      */
     public function hasRole(Role $role): bool
     {
-        return $this->role === $role;
+        /** @var Role $userRole */
+        $userRole = $this->role;
+
+        return $userRole === $role;
     }
 
     /**
@@ -77,6 +80,9 @@ class User extends Authenticatable
      */
     public function canAccessRoute(string $routeName): bool
     {
-        return $this->role->canAccessRoute($routeName);
+        /** @var Role $role */
+        $role = $this->role;
+
+        return $role->canAccessRoute($routeName);
     }
 }

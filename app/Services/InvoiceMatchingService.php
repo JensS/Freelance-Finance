@@ -65,11 +65,13 @@ class InvoiceMatchingService
             $score = $this->calculateMatchScore($transaction, $invoice);
 
             if ($score > 0) {
+                /** @var \App\Models\Customer $customer */
+                $customer = $invoice->customer;
                 $matches[] = [
                     'type' => 'local',
                     'invoice_id' => $invoice->id,
                     'invoice_number' => $invoice->invoice_number,
-                    'customer' => $invoice->customer->name,
+                    'customer' => $customer->name,
                     'amount' => $invoice->total,
                     'date' => $invoice->issue_date->format('d.m.Y'),
                     'score' => $score,
@@ -160,9 +162,11 @@ class InvoiceMatchingService
         }
 
         // Customer name in description: +20 points
+        /** @var \App\Models\Customer $customer */
+        $customer = $invoice->customer;
         if (str_contains(
-            strtolower($transaction->description),
-            strtolower($invoice->customer->name)
+            strtolower($transaction->description ?? ''),
+            strtolower($customer->name)
         )) {
             $score += 20;
         }
@@ -253,7 +257,7 @@ class InvoiceMatchingService
             $transaction->update([
                 'invoice_id' => $invoice->id,
                 'is_validated' => true,
-                'notes' => ($transaction->notes ? $transaction->notes.' | ' : '')
+                'description' => ($transaction->description ? $transaction->description.' | ' : '')
                     ."Verknüpft mit Rechnung {$invoice->invoice_number}",
             ]);
 

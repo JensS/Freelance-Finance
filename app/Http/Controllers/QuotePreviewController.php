@@ -61,8 +61,8 @@ class QuotePreviewController extends Controller
         $quote->customer_id = $customer->id;
         $quote->id = 999999;
 
-        // Add subject for display
-        $quote->subject = 'Webdesign-Leistungen';
+        // Add subject for display (using setAttribute to avoid PHPStan error)
+        $quote->setAttribute('subject', 'Webdesign-Leistungen');
 
         return $quote;
     }

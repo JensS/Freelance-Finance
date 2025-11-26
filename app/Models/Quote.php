@@ -133,9 +133,11 @@ class Quote extends Model
     public function getPdfFilename(): string
     {
         $date = $this->issue_date->format('Y-m-d');
-        $customer = str_replace(' ', '-', $this->customer->name);
+        /** @var Customer $customer */
+        $customer = $this->customer;
+        $customerName = str_replace(' ', '-', $customer->name);
 
-        return "{$date}-Angebot-{$customer}-{$this->quote_number}.pdf";
+        return "{$date}-Angebot-{$customerName}-{$this->quote_number}.pdf";
     }
 
     /**
@@ -162,8 +164,10 @@ class Quote extends Model
 
         try {
             // Upload to Paperless with metadata
+            /** @var Customer $customer */
+            $customer = $this->customer;
             $result = $paperless->uploadDocument($tempPath, [
-                'title' => "Angebot {$this->quote_number} - {$this->customer->name}",
+                'title' => "Angebot {$this->quote_number} - {$customer->name}",
                 'created' => $this->issue_date->format('Y-m-d'),
             ]);
 
@@ -203,6 +207,7 @@ class Quote extends Model
     {
         // Check if already converted
         if ($this->isConverted()) {
+            /** @var Invoice|null */
             return $this->convertedToInvoice;
         }
 

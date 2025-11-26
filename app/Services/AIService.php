@@ -656,18 +656,16 @@ class AIService
         } catch (\Exception $e) {
             Log::error('❌ Model installation failed', [
                 'model' => $modelName,
-                'cache_key' => $cacheKey ?? null,
+                'cache_key' => $cacheKey,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            if ($cacheKey) {
-                \Cache::put($cacheKey, [
-                    'status' => 'error',
-                    'progress' => 0,
-                    'message' => 'Fehler: '.$e->getMessage(),
-                ], now()->addMinutes(5));
-            }
+            \Cache::put($cacheKey, [
+                'status' => 'error',
+                'progress' => 0,
+                'message' => 'Fehler: '.$e->getMessage(),
+            ], now()->addMinutes(5));
 
             return [
                 'success' => false,

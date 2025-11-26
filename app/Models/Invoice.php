@@ -133,9 +133,11 @@ class Invoice extends Model
     public function getPdfFilename(): string
     {
         $date = $this->issue_date->format('Y-m-d');
-        $customer = str_replace(' ', '-', $this->customer->name);
+        /** @var Customer $customer */
+        $customer = $this->customer;
+        $customerName = str_replace(' ', '-', $customer->name);
 
-        return "{$date}-Rechnung-{$customer}-{$this->invoice_number}.pdf";
+        return "{$date}-Rechnung-{$customerName}-{$this->invoice_number}.pdf";
     }
 
     /**
@@ -162,8 +164,10 @@ class Invoice extends Model
 
         try {
             // Upload to Paperless with metadata
+            /** @var Customer $customer */
+            $customer = $this->customer;
             $result = $paperless->uploadDocument($tempPath, [
-                'title' => "Rechnung {$this->invoice_number} - {$this->customer->name}",
+                'title' => "Rechnung {$this->invoice_number} - {$customer->name}",
                 'created' => $this->issue_date->format('Y-m-d'),
             ]);
 

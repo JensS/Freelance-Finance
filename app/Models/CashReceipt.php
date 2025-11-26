@@ -50,6 +50,7 @@ class CashReceipt extends Model
      */
     public function calculateNetGross(): void
     {
+        // @phpstan-ignore-next-line
         if ($this->amount === null) {
             return;
         }

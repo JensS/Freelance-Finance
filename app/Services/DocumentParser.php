@@ -943,7 +943,7 @@ class DocumentParser
     /**
      * Extract VAT rate
      */
-    private function extractVatRate(string $text): ?float
+    private function extractVatRate(string $text): float
     {
         $patterns = [
             '/MwSt\.\s*(\d+(?:[.,]\d+)?)\s*%/i',
