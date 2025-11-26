@@ -179,20 +179,20 @@ class QuoteImporterTest extends TestCase
      */
     public static function quoteProvider(): array
     {
-        $quotesPath = base_path('sample-documents/quotes');
+        $quotesPath = dirname(__DIR__, 2).'/sample-documents/quotes';
 
-        if (! File::isDirectory($quotesPath)) {
+        if (! is_dir($quotesPath)) {
             return [];
         }
 
         $testCases = [];
-        $pdfFiles = File::glob($quotesPath.'/*.pdf');
+        $pdfFiles = glob($quotesPath.'/*.pdf') ?: [];
 
         foreach ($pdfFiles as $pdfPath) {
             $jsonPath = str_replace('.pdf', '.json', $pdfPath);
 
             // Only include if JSON file exists
-            if (File::exists($jsonPath)) {
+            if (file_exists($jsonPath)) {
                 $testName = basename($pdfPath, '.pdf');
                 $testCases[$testName] = [$pdfPath, $jsonPath];
             }

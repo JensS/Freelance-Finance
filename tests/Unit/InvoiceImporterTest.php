@@ -206,20 +206,20 @@ class InvoiceImporterTest extends TestCase
      */
     public static function invoiceProvider(): array
     {
-        $invoicesPath = base_path('sample-documents/invoices');
+        $invoicesPath = dirname(__DIR__, 2).'/sample-documents/invoices';
 
-        if (! File::isDirectory($invoicesPath)) {
+        if (! is_dir($invoicesPath)) {
             return [];
         }
 
         $testCases = [];
-        $pdfFiles = File::glob($invoicesPath.'/*.pdf');
+        $pdfFiles = glob($invoicesPath.'/*.pdf') ?: [];
 
         foreach ($pdfFiles as $pdfPath) {
             $jsonPath = str_replace('.pdf', '.json', $pdfPath);
 
             // Only include if JSON file exists
-            if (File::exists($jsonPath)) {
+            if (file_exists($jsonPath)) {
                 $testName = basename($pdfPath, '.pdf');
                 $testCases[$testName] = [$pdfPath, $jsonPath];
             }

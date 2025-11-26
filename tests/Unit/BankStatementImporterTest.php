@@ -132,20 +132,20 @@ class BankStatementImporterTest extends TestCase
      */
     public static function bankStatementProvider(): array
     {
-        $statementsPath = base_path('sample-documents/bank-statements');
+        $statementsPath = dirname(__DIR__, 2).'/sample-documents/bank-statements';
 
-        if (! File::isDirectory($statementsPath)) {
+        if (! is_dir($statementsPath)) {
             return [];
         }
 
         $testCases = [];
-        $pdfFiles = File::glob($statementsPath.'/*.pdf');
+        $pdfFiles = glob($statementsPath.'/*.pdf') ?: [];
 
         foreach ($pdfFiles as $pdfPath) {
             $jsonPath = str_replace('.pdf', '.json', $pdfPath);
 
             // Only include if JSON file exists
-            if (File::exists($jsonPath)) {
+            if (file_exists($jsonPath)) {
                 $testName = basename($pdfPath, '.pdf');
                 $testCases[$testName] = [$pdfPath, $jsonPath];
             }
