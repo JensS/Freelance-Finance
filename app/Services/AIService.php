@@ -149,7 +149,7 @@ class AIService
      *
      * @param  string  $pdfPath  Path to the PDF file
      * @param  string  $prompt  Extraction prompt
-     * @param  bool  $jsonOutput  Whether to request JSON output
+     * @param  bool  $jsonOutput  Whether to request JSON output (deprecated - now uses TOON)
      * @return array|null Extracted data or null on failure
      */
     public function extractFromDocument(
@@ -196,17 +196,8 @@ class AIService
                 ])
                 ->usingTemperature(0.1); // Low temperature for factual extraction
 
-            // Request JSON output if needed
-            if ($jsonOutput) {
-                // Note: JSON mode support varies by provider
-                // For Anthropic/OpenAI, we add instructions to the prompt
-                // For Ollama, we can use structured output
-                if ($this->visionProvider === 'ollama') {
-                    $request->withClientOptions([
-                        'format' => 'json',
-                    ]);
-                }
-            }
+            // Note: TOON format is now used instead of JSON for better token efficiency
+            // No special format parameter needed - model understands TOON from the prompt
 
             // Generate response
             $response = $request->asText();
@@ -234,29 +225,59 @@ class AIService
                 return null;
             }
 
-            // Parse JSON response
-            if ($jsonOutput) {
-                // Extract JSON from response (some models may add text before/after)
-                if (preg_match('/\{[\s\S]*\}/', $aiResponse, $matches)) {
-                    $aiResponse = $matches[0];
-                }
+            // Parse TOON response
+            try {
+                // Clean up response - remove any markdown formatting
+                $cleanResponse = $aiResponse;
 
-                $extractedData = json_decode($aiResponse, true);
+                // Remove markdown code blocks if present
+                $cleanResponse = preg_replace('/```(?:toon)?\s*(.*?)\s*```/s', '$1', $cleanResponse);
 
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    $this->lastError = 'Failed to parse JSON: '.json_last_error_msg();
-                    Log::error('Failed to parse JSON from AI response', [
-                        'error' => json_last_error_msg(),
+                // Trim whitespace
+                $cleanResponse = trim($cleanResponse);
+
+                // Try to decode TOON format
+                $extractedData = \ToonLite\Toon::decode($cleanResponse);
+
+                if (! is_array($extractedData)) {
+                    $this->lastError = 'TOON parsing returned non-array data';
+                    Log::error('TOON parsing returned invalid data type', [
                         'response' => $aiResponse,
+                        'cleaned' => $cleanResponse,
+                        'result_type' => gettype($extractedData),
                     ]);
 
                     return null;
                 }
 
                 return $extractedData;
-            }
+            } catch (\Exception $e) {
+                $this->lastError = 'Failed to parse TOON: '.$e->getMessage();
+                Log::error('Failed to parse TOON from AI response', [
+                    'error' => $e->getMessage(),
+                    'response' => $aiResponse,
+                ]);
 
-            return ['text' => $aiResponse];
+                // Fallback: try JSON parsing for backward compatibility
+                try {
+                    // Extract JSON from response (some models may add text before/after)
+                    if (preg_match('/\{[\s\S]*\}/', $aiResponse, $matches)) {
+                        $aiResponse = $matches[0];
+                    }
+
+                    $extractedData = json_decode($aiResponse, true);
+
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($extractedData)) {
+                        Log::info('Fallback to JSON parsing succeeded');
+
+                        return $extractedData;
+                    }
+                } catch (\Exception $jsonError) {
+                    // JSON fallback also failed
+                }
+
+                return null;
+            }
 
         } catch (\Exception $e) {
             $this->lastError = $this->formatError($this->visionProvider, $e);

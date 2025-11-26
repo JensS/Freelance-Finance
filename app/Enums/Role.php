@@ -54,7 +54,7 @@ enum Role: string
             // Wildcard match (e.g., 'accounting.*' matches 'accounting.index')
             if (str_ends_with($pattern, '.*')) {
                 $prefix = substr($pattern, 0, -2);
-                if (str_starts_with($routeName, $prefix . '.') || $routeName === $prefix) {
+                if (str_starts_with($routeName, $prefix.'.') || $routeName === $prefix) {
                     return true;
                 }
             }

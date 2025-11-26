@@ -43,7 +43,7 @@ class AIPromptService
         }
 
         return <<<PROMPT
-You are analyzing a receipt or invoice image for tax documents in Germany. Extract the following information and return it as valid JSON.{$correspondentHint}{$knowledgeBaseHint}
+You are analyzing a receipt or invoice image for tax documents in Germany. Extract the following information and return it in TOON format (Token-Oriented Object Notation) - a compact, structured format that's more efficient than JSON.{$correspondentHint}{$knowledgeBaseHint}
 
 **CRITICAL - You must extract ALL of the following fields:**
 
@@ -91,35 +91,39 @@ You are analyzing a receipt or invoice image for tax documents in Germany. Extra
 13. If bewirtete_person is not visible on receipt, set to null (user will fill manually)
 14. Extract ort (location) from the receipt - typically the restaurant name and city
 15. If a field cannot be determined after calculation, set it to null
-16. Return ONLY valid JSON, no additional text or explanation
+16. Return ONLY valid TOON format, no additional text or explanation
+
+**TOON Format Rules:**
+- Use `key: value` for simple fields
+- Use indentation for nested objects
+- No quotes needed for simple strings
+- Numbers without quotes
+- Booleans as true/false
+- null for empty values
 
 **Example Response (Regular Expense):**
-{
-  "date": "15.03.2024",
-  "correspondent": "Amazon EU S.à.r.l.",
-  "amount_gross": 119.00,
-  "vat_rate": 19,
-  "description": "Office supplies and computer equipment",
-  "transaction_type": "Geschäftsausgabe 19%",
-  "is_bewirtung": false,
-  "bewirtete_person": null,
-  "anlass": null,
-  "ort": null
-}
+date: 15.03.2024
+correspondent: Amazon EU S.à.r.l.
+amount_gross: 119.00
+vat_rate: 19
+description: Office supplies and computer equipment
+transaction_type: Geschäftsausgabe 19%
+is_bewirtung: false
+bewirtete_person: null
+anlass: null
+ort: null
 
 **Example for Bewirtung (Restaurant/Business Meal):**
-{
-  "date": "20.03.2024",
-  "correspondent": "Restaurant Maximilians",
-  "amount_gross": 85.60,
-  "vat_rate": 7,
-  "description": "Business lunch - 2 main courses, beverages",
-  "transaction_type": "Bewirtung",
-  "is_bewirtung": true,
-  "bewirtete_person": null,
-  "anlass": null,
-  "ort": "Restaurant Maximilians, Berlin"
-}
+date: 20.03.2024
+correspondent: Restaurant Maximilians
+amount_gross: 85.60
+vat_rate: 7
+description: Business lunch - 2 main courses, beverages
+transaction_type: Bewirtung
+is_bewirtung: true
+bewirtete_person: null
+anlass: null
+ort: Restaurant Maximilians, Berlin
 
 Now analyze the receipt image and extract the information:
 PROMPT;
@@ -140,7 +144,7 @@ PROMPT;
         }
 
         return <<<PROMPT
-You are analyzing an invoice (Rechnung) image for tax documents in Germany. Extract the following information and return it as valid JSON.{$correspondentHint}
+You are analyzing an invoice (Rechnung) image for tax documents in Germany. Extract the following information and return it in TOON format (Token-Oriented Object Notation) - a compact, structured format that's more efficient than JSON.{$correspondentHint}
 
 **Required Fields:**
 - **invoice_number**: The invoice/receipt number (e.g., "503", "RE-2025-001")
@@ -171,39 +175,32 @@ You are analyzing an invoice (Rechnung) image for tax documents in Germany. Extr
 5. Keep all German text, umlauts (ä, ö, ü, ß) and special characters intact in descriptions
 6. Extract ALL line items from the invoice table
 7. If a field cannot be determined, set it to null
-8. Return ONLY valid JSON, no additional text
+8. Return ONLY valid TOON format, no additional text
+
+**TOON Format Rules:**
+- Use `key: value` for simple fields
+- Use tabular format for arrays of objects: `items[n]{field1,field2,...}:`
+- Numbers without quotes
+- null for empty values
 
 **Example Response:**
-{
-  "invoice_number": "503",
-  "customer_name": "Sahler Werbung GmbH & Co. KG",
-  "customer_address": "Berliner Allee 2, 40212 Düsseldorf",
-  "issue_date": "12.08.25",
-  "due_date": "14.08.25",
-  "project_name": "Outerwear / RUSH Kampagne",
-  "service_period_start": "4.8.25",
-  "service_period_end": "9.8.25",
-  "service_location": "Frankfurt",
-  "items": [
-    {
-      "description": "Director creative fee / Gage",
-      "quantity": 3,
-      "unit_price": 2000.00,
-      "total": 6000.00
-    },
-    {
-      "description": "Kameratechnik: A Kamera (Alexa Mini, Objektivsatz, etc.)",
-      "quantity": 1,
-      "unit_price": 1500.00,
-      "total": 1500.00
-    }
-  ],
-  "subtotal": 8615.00,
-  "vat_rate": 19,
-  "vat_amount": 1636.85,
-  "total": 10251.85,
-  "notes": "Vielen Dank für die angenehme Zusammenarbeit! Die Rechnungssumme ist fällig mit Zugang dieser Rechnung."
-}
+invoice_number: 503
+customer_name: Sahler Werbung GmbH & Co. KG
+customer_address: Berliner Allee 2, 40212 Düsseldorf
+issue_date: 12.08.25
+due_date: 14.08.25
+project_name: Outerwear / RUSH Kampagne
+service_period_start: 4.8.25
+service_period_end: 9.8.25
+service_location: Frankfurt
+items[2]{description,quantity,unit_price,total}:
+  Director creative fee / Gage,3,2000.00,6000.00
+  Kameratechnik: A Kamera (Alexa Mini, Objektivsatz, etc.),1,1500.00,1500.00
+subtotal: 8615.00
+vat_rate: 19
+vat_amount: 1636.85
+total: 10251.85
+notes: Vielen Dank für die angenehme Zusammenarbeit! Die Rechnungssumme ist fällig mit Zugang dieser Rechnung.
 
 Now analyze the invoice image and extract the information:
 PROMPT;
@@ -224,7 +221,7 @@ PROMPT;
         }
 
         return <<<PROMPT
-You are analyzing a quote/proposal (Angebot) image for tax documents in Germany. Extract the following information and return it as valid JSON.{$correspondentHint}
+You are analyzing a quote/proposal (Angebot) image for tax documents in Germany. Extract the following information and return it in TOON format (Token-Oriented Object Notation) - a compact, structured format that's more efficient than JSON.{$correspondentHint}
 
 **Required Fields:**
 - **quote_number**: The quote/proposal number (e.g., "2025-P&C-Sustainability-Video-v1", "Q-2025-001")
@@ -255,39 +252,32 @@ You are analyzing a quote/proposal (Angebot) image for tax documents in Germany.
 5. Keep all German text, umlauts (ä, ö, ü, ß) and special characters intact in descriptions
 6. Extract ALL line items from the quote table
 7. If a field cannot be determined, set it to null
-8. Return ONLY valid JSON, no additional text
+8. Return ONLY valid TOON format, no additional text
+
+**TOON Format Rules:**
+- Use `key: value` for simple fields
+- Use tabular format for arrays of objects: `items[n]{field1,field2,...}:`
+- Numbers without quotes
+- null for empty values
 
 **Example Response:**
-{
-  "quote_number": "2025-P&C-Sustainability-Video-v1",
-  "customer_name": "vbc Agency GmbH",
-  "customer_address": "Meinekestr. 12, 10719 Berlin",
-  "issue_date": "21.01.25",
-  "valid_until": null,
-  "project_name": "P&C Sustainability Corporate Video",
-  "brief": "90-120 sekündiges Video zum Thema Sustainability...",
-  "service_period": "Q1 2025",
-  "service_location": "Berlin, DE",
-  "items": [
-    {
-      "description": "Produktion: DP & Director creative fee",
-      "quantity": 1,
-      "unit_price": 2000.00,
-      "total": 2000.00
-    },
-    {
-      "description": "Produktion: Crew: Assistent (1 Drehtag + An- und Abreise)",
-      "quantity": 2,
-      "unit_price": 450.00,
-      "total": 900.00
-    }
-  ],
-  "subtotal": 18190.00,
-  "vat_rate": 19,
-  "vat_amount": 3456.10,
-  "total": 21646.10,
-  "notes": "Vielen Dank für das Interesse an einer Zusammenarbeit!"
-}
+quote_number: 2025-P&C-Sustainability-Video-v1
+customer_name: vbc Agency GmbH
+customer_address: Meinekestr. 12, 10719 Berlin
+issue_date: 21.01.25
+valid_until: null
+project_name: P&C Sustainability Corporate Video
+brief: 90-120 sekündiges Video zum Thema Sustainability...
+service_period: Q1 2025
+service_location: Berlin, DE
+items[2]{description,quantity,unit_price,total}:
+  Produktion: DP & Director creative fee,1,2000.00,2000.00
+  Produktion: Crew: Assistent (1 Drehtag + An- und Abreise),2,450.00,900.00
+subtotal: 18190.00
+vat_rate: 19
+vat_amount: 3456.10
+total: 21646.10
+notes: Vielen Dank für das Interesse an einer Zusammenarbeit!
 
 Now analyze the quote image and extract the information:
 PROMPT;

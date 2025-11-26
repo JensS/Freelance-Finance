@@ -23,6 +23,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - **Other Text Models**: llama3.2, mistral, codellama, qwen3, deepseek-r1
   - **Other Vision Models**: llama3.2-vision, llava, qwen2-vl, granite-3.2-vision
   - **Configuration**: Settings UI or .env via Prism config
+- **TOON Format**: Token-Oriented Object Notation for AI prompts (https://github.com/toon-format/toon)
+  - **Library**: manoj/toon-php-lite (https://packagist.org/packages/manoj/toon-php-lite)
+  - **Benefits**: 40% fewer tokens than JSON, 73.9% accuracy vs JSON's 69.7%
+  - **Usage**: All AI vision extraction uses TOON for responses (receipts, invoices, quotes)
+  - **Format Features**: Indentation-based nesting, tabular arrays for collections, minimal syntax
 - **Queue**: Database queue (Redis optional)
 
 ## Development Commands
@@ -416,6 +421,113 @@ The Settings page (Integrationen → Ollama) automatically detects missing recom
 - Automatic model selection after installation
 
 Users can click "Installieren" to pull the recommended models without terminal access.
+
+## TOON Format for AI Responses
+
+### Overview
+
+**TOON (Token-Oriented Object Notation)** is a compact, human-readable data format optimized for Large Language Model (LLM) communication. The system uses TOON instead of JSON for all AI vision extraction tasks (receipts, invoices, quotes) to reduce token consumption and improve parsing accuracy.
+
+**Key Benefits:**
+- **40% fewer tokens** than JSON
+- **73.9% accuracy** vs JSON's 69.7%
+- **Human-readable** structure with minimal syntax
+- **LLM-friendly** with explicit schema information
+
+### Format Structure
+
+TOON combines two approaches:
+
+**1. Indentation-based nesting** for objects:
+```toon
+date: 15.03.2024
+correspondent: Amazon EU S.à.r.l.
+amount_gross: 119.00
+vat_rate: 19
+description: Office supplies and computer equipment
+is_bewirtung: false
+```
+
+**2. Tabular arrays** for collections (CSV-style):
+```toon
+items[2]{description,quantity,unit_price,total}:
+  Director creative fee / Gage,3,2000.00,6000.00
+  Kameratechnik: A Kamera,1,1500.00,1500.00
+```
+
+### PHP Library
+
+**Package**: `manoj/toon-php-lite` (v0.4.0)
+
+**Basic Usage:**
+```php
+use ToonLite\Toon;
+
+// Encode PHP array to TOON
+$toon = Toon::encode($data);
+
+// Decode TOON to PHP array
+$data = Toon::decode($toon);
+```
+
+**Features:**
+- Zero dependencies
+- Full encode/decode support
+- Multiline strings with triple quotes (`"""`)
+- Minified output option
+- Comment support (`#` and `//`)
+- PHPStan level 8 clean
+
+### Implementation
+
+**AI Prompts** (`app/Services/AIPromptService.php`):
+- All vision extraction prompts request TOON format output
+- Examples show proper TOON structure for receipts, invoices, and quotes
+
+**AI Service** (`app/Services/AIService.php`):
+- `extractFromDocument()` parses TOON responses automatically
+- Fallback to JSON parsing for backward compatibility
+- Handles markdown code blocks and formatting cleanup
+
+**Example TOON Response (Receipt):**
+```toon
+date: 20.03.2024
+correspondent: Restaurant Maximilians
+amount_gross: 85.60
+vat_rate: 7
+description: Business lunch - 2 main courses, beverages
+transaction_type: Bewirtung
+is_bewirtung: true
+bewirtete_person: null
+anlass: null
+ort: Restaurant Maximilians, Berlin
+```
+
+**Example TOON Response (Invoice with Items):**
+```toon
+invoice_number: 503
+customer_name: Sahler Werbung GmbH & Co. KG
+issue_date: 12.08.25
+items[2]{description,quantity,unit_price,total}:
+  Director creative fee / Gage,3,2000.00,6000.00
+  Kameratechnik: A Kamera,1,1500.00,1500.00
+subtotal: 8615.00
+vat_rate: 19
+total: 10251.85
+```
+
+### When TOON Excels
+
+- **Uniform arrays** of objects (invoices, transactions, line items)
+- **Flat to moderately nested** structures
+- **Numeric-heavy data** (financial records, measurements)
+- **Large datasets** where token efficiency matters
+
+### Resources
+
+- **TOON Specification**: https://github.com/toon-format/toon
+- **PHP Library**: https://packagist.org/packages/manoj/toon-php-lite
+- **Article**: https://www.nihardaily.com/131-token-oriented-object-notation-toon-your-path-to-50-token-savings
 
 ## Authentication & Authorization
 
